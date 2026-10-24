@@ -1,0 +1,6 @@
+{
+  "name": "RestaurantOS - Premium AI Restaurant Management SaaS",
+  "description": "Smart Management. Better Restaurants. Multi-tenant restaurant management SaaS developed by DATA WORK AGENCY for POS, inventory, orders, kitchen display, reservations, and AI analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
