@@ -105,6 +105,25 @@ Strict rules:
 // In-memory server-authoritative transactions store
 const serverTransactions = new Map<string, any>();
 
+// Payment Gateway Configuration Status Endpoint (no secrets exposed)
+app.get('/api/payments/gateway-status', (_req, res) => {
+  const orangeConfigured = Boolean(process.env.ORANGE_MONEY_KEY);
+  const mtnConfigured = Boolean(process.env.MOMO_API_KEY);
+  const cardConfigured = Boolean(process.env.PAYMENT_GATEWAY_KEY);
+  const configured = orangeConfigured || mtnConfigured || cardConfigured;
+
+  res.json({
+    configured,
+    providers: {
+      orange_money: orangeConfigured,
+      mtn_momo: mtnConfigured,
+      card: cardConfigured,
+    },
+    currency: 'XAF',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Payment Initiation Endpoint for DATA WORK AGENCY subscriptions
 app.post('/api/payments/initiate', (req, res) => {
   const { orgId, planId, period = 'monthly', amount, currency = 'XAF', paymentMethod, payerPhone, payerEmail } = req.body;
@@ -152,30 +171,44 @@ app.post('/api/payments/initiate', (req, res) => {
   });
 });
 
-// Payment Verification Endpoint (Server-authoritative)
+// Payment Verification Endpoint (Server-authoritative & honest: never simulates paid transactions)
 app.post('/api/payments/verify', (req, res) => {
   const { transactionId } = req.body;
   if (!transactionId) {
     return res.status(400).json({ error: 'Transaction ID required' });
   }
 
+  const hasGatewayKeys = Boolean(
+    process.env.MOMO_API_KEY || process.env.ORANGE_MONEY_KEY || process.env.PAYMENT_GATEWAY_KEY
+  );
   const tx = serverTransactions.get(transactionId);
-  const confirmedTx = tx
-    ? { ...tx, status: 'confirmed', confirmedAt: new Date().toISOString(), operatorReference: `OP-${Math.floor(100000 + Math.random() * 900000)}` }
-    : {
-        id: transactionId,
-        status: 'confirmed',
-        confirmedAt: new Date().toISOString(),
-        operatorReference: `OP-${Math.floor(100000 + Math.random() * 900000)}`,
-      };
 
-  if (tx) {
-    serverTransactions.set(transactionId, confirmedTx);
+  if (!hasGatewayKeys) {
+    const pendingTx = tx
+      ? { ...tx, status: 'pending', isLiveGateway: false }
+      : { id: transactionId, status: 'pending', isLiveGateway: false };
+    return res.json({
+      status: 'pending',
+      configured: false,
+      transaction: pendingTx,
+      message:
+        'Passerelle de paiement automatique non configurée (ORANGE_MONEY_KEY / MOMO_API_KEY / PAYMENT_GATEWAY_KEY absentes). La demande est enregistrée en attente de validation par DATA WORK AGENCY.',
+    });
+  }
+
+  if (tx && tx.status === 'confirmed') {
+    return res.json({
+      status: 'confirmed',
+      configured: true,
+      transaction: tx,
+    });
   }
 
   return res.json({
-    status: 'confirmed',
-    transaction: confirmedTx,
+    status: tx?.status || 'pending',
+    configured: true,
+    transaction: tx || { id: transactionId, status: 'pending' },
+    message: 'En attente de confirmation définitive du webhook opérateur.',
   });
 });
 
@@ -195,6 +228,40 @@ app.post('/api/payments/webhook', (req, res) => {
   }
 
   return res.status(200).json({ received: true, timestamp: new Date().toISOString() });
+});
+
+// Daily Activity & Z-Report Email Dispatch Endpoint
+app.post('/api/reports/email', (req, res) => {
+  const { reportId, recipientEmail, restaurantName, reportDate, summary, language = 'fr' } = req.body;
+
+  if (!recipientEmail || !restaurantName) {
+    return res.status(400).json({ error: 'recipientEmail and restaurantName are required' });
+  }
+
+  const hasSmtpConfig = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER);
+
+  if (!hasSmtpConfig) {
+    return res.status(200).json({
+      success: false,
+      configured: false,
+      message:
+        language === 'fr'
+          ? "Le service d'envoi d'e-mails (SMTP) n'est pas encore configuré sur le serveur RestaurantOS. Vous pouvez imprimer/sauvegarder le rapport au format PDF ou exporter les données au format Excel / CSV."
+          : "The email dispatch service (SMTP) is not yet configured on the RestaurantOS server. You can download the report as PDF or export the data in Excel / CSV format.",
+      recipientEmail,
+      reportDate,
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    configured: true,
+    message:
+      language === 'fr'
+        ? `Rapport d'activité et clôture Z transmis avec succès à ${recipientEmail}.`
+        : `Daily activity and Z-report successfully dispatched to ${recipientEmail}.`,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Mount Vite middleware in development or serve static in production

@@ -19,6 +19,13 @@ import {
   INITIAL_SUBSCRIPTION_PLANS,
   INITIAL_BILLING_TRANSACTIONS,
   INITIAL_STAFF_INVITATIONS,
+  INITIAL_REVIEWS,
+  INITIAL_INTERNAL_NOTES,
+  INITIAL_STAFF_SHIFTS,
+  INITIAL_DAILY_Z_REPORTS,
+  INITIAL_EXPENSES,
+  INITIAL_SUPPORT_TICKETS,
+  INITIAL_PLATFORM_SETTINGS,
   STORAGE_KEY,
 } from '../data/mockDatabase';
 import {
@@ -40,6 +47,16 @@ import {
   AuditLog,
   StaffInvitation,
   SubscriptionPlanId,
+  SubscriptionPlan,
+  ThemeMode,
+  CustomerReview,
+  InternalStaffNote,
+  StaffShift,
+  DailyZReport,
+  BillingTransaction,
+  ExpenseRecord,
+  SupportTicket,
+  PlatformSettings,
 } from '../types/restaurant';
 
 export type AppView =
@@ -49,6 +66,7 @@ export type AppView =
   | 'onboarding'
   | 'restaurants'
   | 'profile'
+  | 'user_profile'
   | 'subscription'
   | 'public_menu'
   | 'dashboard'
@@ -63,6 +81,7 @@ export type AppView =
   | 'customers'
   | 'staff'
   | 'reports'
+  | 'reviews'
   | 'ai'
   | 'settings'
   | 'superadmin'
@@ -83,6 +102,8 @@ export function getPathForView(view: AppView): string {
       return '/app/restaurants';
     case 'profile':
       return '/app/profile';
+    case 'user_profile':
+      return '/app/user-profile';
     case 'subscription':
       return '/app/subscription';
     case 'public_menu':
@@ -111,6 +132,8 @@ export function getPathForView(view: AppView): string {
       return '/app/staff';
     case 'reports':
       return '/app/reports';
+    case 'reviews':
+      return '/app/reviews';
     case 'ai':
       return '/app/ai';
     case 'superadmin':
@@ -132,6 +155,7 @@ export function getViewFromPath(path: string): AppView {
   if (path === '/onboarding') return 'onboarding';
   if (path === '/app/restaurants') return 'restaurants';
   if (path === '/app/profile') return 'profile';
+  if (path === '/app/user-profile') return 'user_profile';
   if (path === '/app/subscription' || path === '/subscription') return 'subscription';
   if (path === '/public-menu' || path.startsWith('/public-menu') || path.startsWith('/menu/')) return 'public_menu';
   if (path === '/app/settings') return 'settings';
@@ -146,6 +170,7 @@ export function getViewFromPath(path: string): AppView {
   if (path === '/app/customers') return 'customers';
   if (path === '/app/staff') return 'staff';
   if (path === '/app/reports') return 'reports';
+  if (path === '/app/reviews' || path === '/reviews') return 'reviews';
   if (path === '/app/ai') return 'ai';
   if (path === '/app/superadmin') return 'superadmin';
   if (path === '/app/database_schema') return 'database_schema';
@@ -165,6 +190,11 @@ interface RestaurantContextType {
   setActiveLocationId: (id: string) => void;
   currentUser: DatabaseState['currentUser'];
   switchUserRole: (role: UserRole) => void;
+
+  // Theme System (Triple: light / dark / auto)
+  theme: ThemeMode;
+  setTheme: (theme: ThemeMode) => void;
+  effectiveTheme: 'light' | 'dark';
 
   // Multi-Restaurant
   activeOrganization: Organization;
@@ -193,6 +223,70 @@ interface RestaurantContextType {
   scopedCustomers: Customer[];
   scopedAuditLogs: AuditLog[];
   scopedLocations: RestaurantLocation[];
+  scopedReviews: CustomerReview[];
+  scopedInternalNotes: InternalStaffNote[];
+  scopedStaffShifts: StaffShift[];
+  scopedDailyZReports: DailyZReport[];
+  scopedExpenses: ExpenseRecord[];
+
+  // Plan entitlements & trial gating
+  getPlanEntitlements: (org?: Organization) => {
+    plan: SubscriptionPlan;
+    isExpired: boolean;
+    maxLocations: number;
+    aiIncluded: boolean;
+    currentLocationsCount: number;
+    canAddLocation: boolean;
+    canUseAI: boolean;
+  };
+
+  // Finances / Expenses
+  addExpense: (expense: Omit<ExpenseRecord, 'id' | 'orgId' | 'createdAt' | 'recordedBy'>) => ExpenseRecord;
+  deleteExpense: (expenseId: string) => void;
+
+  // Profile & Vitrine
+  updateOrganizationProfile: (updates: Partial<Organization>) => void;
+  addGalleryImage: (imageUrl: string) => void;
+  removeGalleryImage: (index: number) => void;
+  reorderGalleryImages: (fromIndex: number, toIndex: number) => void;
+
+  // Customer Reviews
+  addCustomerReview: (review: Omit<CustomerReview, 'id' | 'createdAt' | 'status'>) => CustomerReview;
+  updateReviewStatus: (reviewId: string, status: CustomerReview['status']) => void;
+  replyToReview: (reviewId: string, replyText: string) => void;
+
+  // Internal Staff Notes
+  addInternalNote: (title: string, content: string, urgency?: 'low' | 'medium' | 'high') => void;
+  togglePinNote: (noteId: string) => void;
+  deleteInternalNote: (noteId: string) => void;
+
+  // Staff Attendance / Clock-in
+  clockInStaff: (userName: string, userRole: UserRole, notes?: string) => StaffShift;
+  clockOutStaff: (shiftId: string, notes?: string) => void;
+
+  // Daily Activity & Z-Report
+  generateZReportData: (date?: string) => Omit<DailyZReport, 'id' | 'createdAt'>;
+  performDailyClosing: (closingData: {
+    cashDrawerStarting: number;
+    cashDrawerActual: number;
+    notes?: string;
+    openingTime?: string;
+    closingTime?: string;
+  }) => DailyZReport;
+
+  // Public Storefront & Preview Isolation
+  publicPreviewMode: boolean;
+  publicTableParam: string | null;
+  publicUrlInvalidSlug: string | null;
+  openPublicStorefront: (asClientPreview?: boolean, tableNumber?: string) => void;
+  exitPublicPreview: () => void;
+  checkReservationAvailability: (
+    orgId: string,
+    date: string,
+    time: string,
+    guestCount: number,
+    area?: string
+  ) => { available: boolean; reason?: string; remainingSeats: number; suggestedTimes?: string[] };
 
   // Business logic actions
   createOrder: (orderData: Partial<Order>) => Order;
@@ -201,12 +295,19 @@ interface RestaurantContextType {
   updateTableStatus: (tableId: string, status: TableStatus, currentOrderId?: string, guestName?: string) => void;
   transferTableOrder: (fromTableId: string, toTableId: string) => boolean;
   addInventoryMovement: (itemId: string, type: 'purchase' | 'usage' | 'waste' | 'adjustment', quantity: number, reason: string) => void;
-  createReservation: (res: Omit<Reservation, 'id' | 'createdAt' | 'orgId' | 'locationId'>) => void;
+  createReservation: (
+    res: Omit<Reservation, 'id' | 'createdAt' | 'orgId' | 'locationId'>,
+    targetOrgId?: string
+  ) => Reservation;
   updateReservationStatus: (id: string, status: Reservation['status']) => void;
   createProduct: (product: Omit<Product, 'id' | 'orgId'>) => void;
   updateProduct: (id: string, updates: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
   toggleProductAvailability: (id: string) => void;
+  createCategory: (name: string) => Category;
+  createInventoryItem: (item: Omit<InventoryItem, 'id' | 'orgId'>) => InventoryItem;
+  updateCurrentUser: (updates: Partial<DatabaseState['currentUser']>) => void;
+  recordBillingTransaction: (tx: BillingTransaction) => void;
   updateOrganizationSettings: (updates: Partial<Organization>) => void;
   completeOnboarding: (orgData: Partial<Organization>, locationData: Partial<RestaurantLocation>) => void;
   resetToDemo: () => void;
@@ -217,9 +318,27 @@ interface RestaurantContextType {
   revokeStaffInvitation: (invitationId: string) => void;
   acceptStaffInvitation: (code: string) => { success: boolean; message: string; organization?: Organization };
 
+  // Support Tickets
+  submitSupportTicket: (
+    ticket: Omit<SupportTicket, 'id' | 'status' | 'createdAt' | 'updatedAt'>
+  ) => SupportTicket;
+  updateSupportTicketStatus: (
+    ticketId: string,
+    status: SupportTicket['status'],
+    adminNote?: string
+  ) => void;
+
   // SuperAdmin Platform Operations
   updateSubscriptionPlanPrice: (planId: SubscriptionPlanId, newPriceXAF: number) => void;
+  updateSubscriptionPlan: (planId: SubscriptionPlanId, updates: Partial<SubscriptionPlan>) => void;
+  approveBillingTransaction: (txId: string) => void;
+  rejectBillingTransaction: (txId: string, reason?: string) => void;
+  updateUserRole: (userId: string, role: UserRole) => void;
+  updatePlatformSettings: (updates: Partial<PlatformSettings>) => void;
   toggleRestaurantStatus: (orgId: string) => void;
+  extendTrialDays: (orgId: string, days?: number) => void;
+  activateSubscriptionManually: (orgId: string, planId?: SubscriptionPlanId, durationMonths?: number) => void;
+  populateStarterMenu: (orgId: string) => void;
 }
 
 const RestaurantContext = createContext<RestaurantContextType | undefined>(undefined);
@@ -230,7 +349,49 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     return (localStorage.getItem('restaurantos_lang') as Language) || 'fr';
   });
 
-  // Read initial view from URL path
+  // Triple Theme system: light, dark, auto
+  const [theme, setThemeState] = useState<ThemeMode>(() => {
+    return (localStorage.getItem('restaurantos_theme') as ThemeMode) || 'auto';
+  });
+
+  const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => setSystemPrefersDark(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  const effectiveTheme: 'light' | 'dark' =
+    theme === 'auto' ? (systemPrefersDark ? 'dark' : 'light') : theme;
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (effectiveTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [effectiveTheme]);
+
+  const setTheme = (newTheme: ThemeMode) => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem('restaurantos_theme', newTheme);
+    } catch (e) {
+      console.error('Could not save theme:', e);
+    }
+  };
+
+  // Read initial view from URL path & query parameters
   const [activeView, setActiveViewState] = useState<AppView>(() => {
     if (typeof window !== 'undefined') {
       const initialFromUrl = getViewFromPath(window.location.pathname);
@@ -239,21 +400,110 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     return 'marketing';
   });
 
+  const [publicPreviewMode, setPublicPreviewMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('preview') === 'client';
+    }
+    return false;
+  });
+
+  const [publicTableParam, setPublicTableParam] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('table');
+    }
+    return null;
+  });
+
+  const [publicUrlInvalidSlug, setPublicUrlInvalidSlug] = useState<string | null>(null);
+
   // Save state on any update
   useEffect(() => {
     saveDatabaseState(state);
   }, [state]);
 
+  // Enforce automatic 7-day trial expiration check without altering active paid subscriptions
+  useEffect(() => {
+    const nowMs = Date.now();
+    const hasExpiredTrial = state.organizations.some(
+      (org) =>
+        org.subscriptionStatus === 'trial' &&
+        org.trialEndsAt &&
+        new Date(org.trialEndsAt).getTime() <= nowMs
+    );
+
+    if (hasExpiredTrial) {
+      setState((prev) => {
+        const updatedOrgs = prev.organizations.map((org) =>
+          org.subscriptionStatus === 'trial' &&
+          org.trialEndsAt &&
+          new Date(org.trialEndsAt).getTime() <= nowMs
+            ? { ...org, subscriptionStatus: 'expired' as const }
+            : org
+        );
+        const currentOrg = updatedOrgs.find((o) => o.id === prev.activeOrgId) || prev.organization;
+        return {
+          ...prev,
+          organizations: updatedOrgs,
+          organization: currentOrg,
+        };
+      });
+    }
+  }, [state.activeOrgId, state.organizations.length]);
+
   // Handle browser Back / Forward buttons (popstate)
   useEffect(() => {
     const handlePopState = () => {
       const targetView = getViewFromPath(window.location.pathname);
+      const params = new URLSearchParams(window.location.search);
+      setPublicTableParam(params.get('table'));
+      setPublicPreviewMode(params.get('preview') === 'client' && state.isAuthenticated);
       setActiveViewState(targetView);
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [state.isAuthenticated]);
+
+  // Synchronize public menu restaurant if accessed via /menu/:slugOrId
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/menu/')) {
+      const slugOrId = decodeURIComponent(
+        window.location.pathname.replace('/menu/', '').split('?')[0].split('/')[0]
+      )
+        .trim()
+        .toLowerCase();
+
+      const params = new URLSearchParams(window.location.search);
+      const tbl = params.get('table');
+      if (tbl !== null && tbl !== publicTableParam) {
+        setPublicTableParam(tbl);
+      }
+
+      if (slugOrId) {
+        const matched = state.organizations.find(
+          (o) =>
+            o.status !== 'archived' &&
+            (o.slug.toLowerCase() === slugOrId || o.id.toLowerCase() === slugOrId)
+        );
+        if (matched) {
+          setPublicUrlInvalidSlug(null);
+          if (matched.id !== state.activeOrgId) {
+            setState((prev) => ({
+              ...prev,
+              activeOrgId: matched.id,
+              organization: matched,
+            }));
+          }
+        } else {
+          setPublicUrlInvalidSlug(slugOrId);
+        }
+      }
+    } else if (publicUrlInvalidSlug) {
+      setPublicUrlInvalidSlug(null);
+    }
+  }, [state.organizations, state.activeOrgId, activeView]);
 
   // Enforce access control rules on view changes
   useEffect(() => {
@@ -310,14 +560,46 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
 
     if (typeof window !== 'undefined') {
       const targetPath = getPathForView(targetView);
-      if (window.location.pathname !== targetPath) {
+      if (targetView !== 'public_menu' && window.location.pathname !== targetPath) {
         window.history.pushState({ view: targetView }, '', targetPath);
+      } else if (targetView === 'public_menu' && !window.location.pathname.startsWith('/menu/')) {
+        const slug = activeOrganization?.slug || activeOrganization?.id || 'restaurant';
+        window.history.pushState({ view: 'public_menu' }, '', `/menu/${slug}`);
       }
     }
   };
 
   const setActiveView = (view: AppView) => {
     navigateTo(view);
+  };
+
+  const openPublicStorefront = (asClientPreview: boolean = true, tableNumber?: string) => {
+    const slug = activeOrganization?.slug || activeOrganization?.id || 'restaurant';
+    const isPreview = asClientPreview && state.isAuthenticated;
+    setPublicPreviewMode(isPreview);
+    setPublicTableParam(tableNumber || null);
+    setPublicUrlInvalidSlug(null);
+
+    const searchParams = new URLSearchParams();
+    if (tableNumber) searchParams.set('table', tableNumber);
+    if (isPreview) searchParams.set('preview', 'client');
+    const queryStr = searchParams.toString();
+    const targetUrl = `/menu/${slug}${queryStr ? `?${queryStr}` : ''}`;
+
+    setActiveViewState('public_menu');
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ view: 'public_menu' }, '', targetUrl);
+    }
+  };
+
+  const exitPublicPreview = () => {
+    setPublicPreviewMode(false);
+    setPublicTableParam(null);
+    if (state.isAuthenticated) {
+      navigateTo('dashboard');
+    } else {
+      navigateTo('marketing');
+    }
   };
 
   // Computed: currently active organization
@@ -347,6 +629,48 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
   const scopedCustomers = state.customers.filter((c) => c.orgId === currentOrgId);
   const scopedAuditLogs = state.auditLogs.filter((a) => a.orgId === currentOrgId);
   const scopedLocations = state.locations.filter((l) => l.orgId === currentOrgId);
+  const scopedReviews = (state.reviews || []).filter((r) => r.orgId === currentOrgId);
+  const scopedInternalNotes = (state.internalNotes || []).filter((n) => n.orgId === currentOrgId);
+  const scopedStaffShifts = (state.staffShifts || []).filter((s) => s.orgId === currentOrgId);
+  const scopedDailyZReports = (state.dailyZReports || []).filter((z) => z.orgId === currentOrgId);
+  const scopedExpenses = (state.expenses || []).filter((e) => e.orgId === currentOrgId);
+
+  const getPlanEntitlements = (targetOrg?: Organization) => {
+    const org = targetOrg || activeOrganization;
+    const plan =
+      state.subscriptionPlans.find((p) => p.id === org.subscriptionPlan) ||
+      state.subscriptionPlans[0];
+    const nowMs = Date.now();
+    const trialExpired =
+      org.subscriptionStatus === 'expired' ||
+      (org.subscriptionStatus === 'trial' &&
+        org.trialEndsAt &&
+        new Date(org.trialEndsAt).getTime() <= nowMs);
+    const activeOrganizationsCount = userOrganizations.filter(
+      (o) => o.status !== 'archived'
+    ).length;
+    const isTrialActive = org.subscriptionStatus === 'trial' && !trialExpired;
+    const isPaidActive = org.subscriptionStatus === 'active';
+    const maxLocations = plan.maxLocations || 1;
+    const aiIncluded = Boolean(plan.aiIncluded);
+    const isPlatformAdmin =
+      state.currentUser.role === 'platform_admin' ||
+      state.currentUser.email === 'dataworkagency0@gmail.com';
+
+    return {
+      plan,
+      isExpired: Boolean(trialExpired),
+      maxLocations,
+      aiIncluded,
+      currentLocationsCount: activeOrganizationsCount,
+      canAddLocation:
+        isPlatformAdmin ||
+        (!trialExpired && activeOrganizationsCount < maxLocations),
+      canUseAI:
+        isPlatformAdmin ||
+        (!trialExpired && (isTrialActive || (isPaidActive && aiIncluded))),
+    };
+  };
 
   const activeLocation =
     scopedLocations.find((l) => l.id === state.activeLocationId) ||
@@ -392,6 +716,8 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     const orgId = `org_${Date.now()}`;
     const locId = `loc_${Date.now()}`;
 
+    const trialDays = Math.min(7, Math.max(1, state.platformSettings?.defaultTrialDays || 7));
+
     const newOrg: Organization = {
       id: orgId,
       name: orgData.name || 'Mon Restaurant',
@@ -406,7 +732,10 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       address: orgData.address || '',
       subscriptionPlan: orgData.subscriptionPlan || 'starter',
       subscriptionStatus: 'trial',
-      trialEndsAt: new Date(Date.now() + 14 * 86400000).toISOString(),
+      trialStartedAt: new Date().toISOString(),
+      trialEndsAt: new Date(Date.now() + trialDays * 86400000).toISOString(),
+      paymentStatus: 'pending',
+      billingPeriod: 'monthly',
       taxRate: orgData.currency === 'XAF' ? 19.25 : 0,
       enableOnlineOrdering: true,
       enableTableOrdering: true,
@@ -545,35 +874,41 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
 
   // Authentication Operations
   const login = (email: string, password?: string) => {
-    // Find matching profile or create session
-    const existingProfile = INITIAL_PROFILES.find((p) => p.email.toLowerCase() === email.toLowerCase());
+    const existingProfile =
+      (state.users || []).find((p) => p.email.toLowerCase() === email.toLowerCase()) ||
+      INITIAL_PROFILES.find((p) => p.email.toLowerCase() === email.toLowerCase());
 
+    const isAgencyAdmin = email.trim().toLowerCase() === 'dataworkagency0@gmail.com';
     const user: DatabaseState['currentUser'] = existingProfile || {
       id: `usr_${Date.now()}`,
-      name: email.split('@')[0],
+      name: isAgencyAdmin ? 'DATA WORK AGENCY (Admin)' : email.split('@')[0],
       email,
-      role: 'owner',
-      organizationIds: [],
+      role: isAgencyAdmin ? 'platform_admin' : 'owner',
+      organizationIds: isAgencyAdmin ? state.organizations.map((o) => o.id) : [],
     };
 
-    setState((prev) => ({
-      ...prev,
-      isAuthenticated: true,
-      currentUser: user,
-    }));
+    setState((prev) => {
+      const existsInUsers = (prev.users || []).some((u) => u.email.toLowerCase() === user.email.toLowerCase());
+      return {
+        ...prev,
+        isAuthenticated: true,
+        currentUser: user,
+        users: existsInUsers ? prev.users : [user, ...(prev.users || [])],
+      };
+    });
 
     // Check user's restaurants
     const availableOrgs = state.organizations.filter(
       (o) =>
         o.status !== 'archived' &&
-        (o.ownerId === user.id || user.organizationIds?.includes(o.id) || o.isDemo)
+        (isAgencyAdmin || o.ownerId === user.id || user.organizationIds?.includes(o.id) || o.isDemo)
     );
 
     if (availableOrgs.length === 0) {
       navigateTo('onboarding');
     } else {
       switchOrganization(availableOrgs[0].id);
-      navigateTo('dashboard');
+      navigateTo(isAgencyAdmin ? 'superadmin' : 'dashboard');
     }
 
     return { success: true };
@@ -592,6 +927,13 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const register = (name: string, email: string, password?: string) => {
+    if (state.platformSettings && !state.platformSettings.allowNewRegistrations) {
+      return {
+        success: false,
+        message: 'Les nouvelles inscriptions sont temporairement suspendues par DATA WORK AGENCY.',
+      };
+    }
+
     const newUser: DatabaseState['currentUser'] = {
       id: `usr_${Date.now()}`,
       name,
@@ -604,6 +946,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       ...prev,
       isAuthenticated: true,
       currentUser: newUser,
+      users: [newUser, ...(prev.users || [])],
     }));
 
     // New user has 0 restaurants, route to onboarding directly!
@@ -635,21 +978,35 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const createOrder = (orderData: Partial<Order>): Order => {
     const orderNumber = `CMD-${Math.floor(1000 + Math.random() * 9000)}`;
+    const isClientOrder = orderData.source === 'public_web' || orderData.source === 'qr_table';
+    const actorDisplayName =
+      orderData.createdBy ||
+      (orderData.source === 'qr_table'
+        ? 'Client (QR Table)'
+        : orderData.source === 'public_web'
+        ? 'Client (Menu Public)'
+        : state.currentUser.name);
+
     const newOrder: Order = {
       id: `ord_${Date.now()}`,
       orderNumber,
-      orgId: activeOrganization.id,
-      locationId: state.activeLocationId,
+      orgId: orderData.orgId || activeOrganization.id,
+      locationId: orderData.locationId || state.activeLocationId,
       tableId: orderData.tableId,
       tableName: orderData.tableName,
       type: orderData.type || 'dine_in',
-      status: 'confirmed',
+      status: orderData.status || (isClientOrder ? 'pending' : 'confirmed'),
       paymentStatus: orderData.paymentStatus || 'unpaid',
       paymentMethod: orderData.paymentMethod,
+      paymentProvider: orderData.paymentProvider,
       customerName:
         orderData.customerName ||
         (orderData.tableId ? `Client ${orderData.tableName || ''}` : 'Client Comptoir'),
       customerPhone: orderData.customerPhone,
+      deliveryAddress: orderData.deliveryAddress,
+      source: orderData.source || 'pos',
+      clientTrackingToken:
+        orderData.clientTrackingToken || `trk_${Math.random().toString(36).slice(2, 10)}`,
       items: orderData.items || [],
       subtotal: orderData.subtotal || 0,
       taxAmount: orderData.taxAmount || 0,
@@ -658,7 +1015,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       notes: orderData.notes,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      createdBy: state.currentUser.name,
+      createdBy: actorDisplayName,
       prepTimeMinutes: orderData.prepTimeMinutes || 20,
     };
 
@@ -893,13 +1250,125 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     });
   };
 
+  const checkReservationAvailability = (
+    orgId: string,
+    date: string,
+    time: string,
+    guestCount: number,
+    area?: string
+  ): { available: boolean; reason?: string; remainingSeats: number; suggestedTimes?: string[] } => {
+    const org = state.organizations.find((o) => o.id === orgId) || activeOrganization;
+    const parseMins = (hhmm: string) => {
+      const [h, m] = hhmm.split(':').map(Number);
+      return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
+    };
+
+    // Check day opening hours
+    if (org.businessHoursSchedule && org.businessHoursSchedule.length > 0 && date) {
+      const dayNamesFr = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+      const d = new Date(`${date}T12:00:00`);
+      const dayLabel = dayNamesFr[d.getDay()];
+      const daySchedule = org.businessHoursSchedule.find(
+        (h) => h.day.toLowerCase() === dayLabel.toLowerCase()
+      );
+      if (daySchedule) {
+        if (daySchedule.isClosed) {
+          return {
+            available: false,
+            reason:
+              language === 'fr'
+                ? `L’établissement est fermé le ${dayLabel}.`
+                : `The restaurant is closed on ${dayLabel}.`,
+            remainingSeats: 0,
+          };
+        }
+        const reqMin = parseMins(time);
+        const openMin = parseMins(daySchedule.open);
+        let closeMin = parseMins(daySchedule.close);
+        if (closeMin <= openMin) closeMin += 24 * 60;
+        const effectiveReqMin = reqMin < openMin && closeMin > 24 * 60 ? reqMin + 24 * 60 : reqMin;
+
+        if (effectiveReqMin < openMin || effectiveReqMin > closeMin - 30) {
+          return {
+            available: false,
+            reason:
+              language === 'fr'
+                ? `Horaires d’ouverture le ${dayLabel} : ${daySchedule.open} - ${daySchedule.close}.`
+                : `Opening hours on ${dayLabel}: ${daySchedule.open} - ${daySchedule.close}.`,
+            remainingSeats: 0,
+          };
+        }
+      }
+    }
+
+    const orgTables = state.tables.filter((t) => t.orgId === orgId && t.status !== 'out_of_service');
+    const normalizeArea = (val?: string) => (val || '').toLowerCase();
+    const matchingAreaTables =
+      area && area !== 'all'
+        ? orgTables.filter((t) => {
+            const ta = t.area.toLowerCase();
+            const ra = normalizeArea(area);
+            if (ra.includes('terrasse') || ra.includes('terrace')) return ta === 'terrace';
+            if (ra.includes('vip')) return ta === 'vip_lounge';
+            if (ra.includes('bar')) return ta === 'bar';
+            return ta === 'main_hall';
+          })
+        : orgTables;
+
+    const totalCapacity =
+      matchingAreaTables.length > 0
+        ? matchingAreaTables.reduce((sum, t) => sum + t.capacity, 0)
+        : orgTables.length > 0
+        ? orgTables.reduce((sum, t) => sum + t.capacity, 0)
+        : 24;
+
+    const reqMins = parseMins(time);
+    const sameDayActiveRes = state.reservations.filter(
+      (r) => r.orgId === orgId && r.date === date && r.status !== 'cancelled'
+    );
+
+    const computeRemainingForTime = (targetMins: number) => {
+      const bookedSeats = sameDayActiveRes
+        .filter((r) => Math.abs(parseMins(r.time) - targetMins) < 90)
+        .filter((r) => {
+          if (!area || area === 'all' || matchingAreaTables.length === 0) return true;
+          return normalizeArea(r.area) === normalizeArea(area);
+        })
+        .reduce((sum, r) => sum + r.guestCount, 0);
+      return Math.max(0, totalCapacity - bookedSeats);
+    };
+
+    const remainingSeats = computeRemainingForTime(reqMins);
+    if (guestCount > remainingSeats) {
+      const candidateTimes = ['12:00', '13:30', '19:00', '20:30', '21:30'];
+      const suggestedTimes = candidateTimes.filter(
+        (ct) => ct !== time && computeRemainingForTime(parseMins(ct)) >= guestCount
+      );
+      return {
+        available: false,
+        reason:
+          language === 'fr'
+            ? `Capacité insuffisante à ${time} (${remainingSeats} place(s) restante(s) pour ${guestCount} personne(s)).`
+            : `Not enough seats at ${time} (${remainingSeats} seat(s) left for ${guestCount} guest(s)).`,
+        remainingSeats,
+        suggestedTimes,
+      };
+    }
+
+    return { available: true, remainingSeats };
+  };
+
   const createReservation = (
-    res: Omit<Reservation, 'id' | 'createdAt' | 'orgId' | 'locationId'>
-  ) => {
+    res: Omit<Reservation, 'id' | 'createdAt' | 'orgId' | 'locationId'>,
+    targetOrgId?: string
+  ): Reservation => {
+    const orgId = targetOrgId || activeOrganization.id;
+    const reservationCode = `RES-${Math.floor(1000 + Math.random() * 9000)}`;
     const newReservation: Reservation = {
       ...res,
       id: `res_${Date.now()}`,
-      orgId: activeOrganization.id,
+      reservationCode,
+      orgId,
       locationId: state.activeLocationId,
       createdAt: new Date().toISOString(),
     };
@@ -910,15 +1379,17 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       auditLogs: [
         {
           id: `log_${Date.now()}`,
-          orgId: activeOrganization.id,
-          actorName: prev.currentUser.name,
+          orgId,
+          actorName: prev.isAuthenticated ? prev.currentUser.name : `${newReservation.customerName} (Client)`,
           action: 'Nouvelle réservation',
-          details: `Réservation pour ${newReservation.customerName} (${newReservation.guestCount} personnes, table ${newReservation.tableName || ''})`,
+          details: `Réservation ${reservationCode} pour ${newReservation.customerName} (${newReservation.guestCount} pers., ${newReservation.date} à ${newReservation.time})`,
           createdAt: new Date().toISOString(),
         },
         ...prev.auditLogs,
       ],
     }));
+
+    return newReservation;
   };
 
   const updateReservationStatus = (id: string, status: Reservation['status']) => {
@@ -974,6 +1445,99 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     }));
   };
 
+  const createCategory = (name: string): Category => {
+    const cleanName = name.trim();
+    const newCat: Category = {
+      id: `cat_${Date.now()}`,
+      orgId: activeOrganization.id,
+      name: cleanName,
+      nameFr: cleanName,
+      iconName: 'Utensils',
+      sortOrder: scopedCategories.length + 1,
+      isActive: true,
+    };
+    setState((prev) => ({
+      ...prev,
+      categories: [...prev.categories, newCat],
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId: activeOrganization.id,
+          actorName: prev.currentUser.name,
+          action: 'Création catégorie menu',
+          details: `Catégorie « ${cleanName} » ajoutée`,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+    return newCat;
+  };
+
+  const createInventoryItem = (itemData: Omit<InventoryItem, 'id' | 'orgId'>): InventoryItem => {
+    const newItem: InventoryItem = {
+      ...itemData,
+      id: `inv_${Date.now()}`,
+      orgId: activeOrganization.id,
+      lastRestockedAt: new Date().toISOString().split('T')[0],
+    };
+    setState((prev) => ({
+      ...prev,
+      inventory: [newItem, ...prev.inventory],
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId: activeOrganization.id,
+          actorName: prev.currentUser.name,
+          action: 'Nouvel ingrédient créé',
+          details: `Article « ${newItem.name} » (${newItem.currentStock} ${newItem.unit}) ajouté au stock`,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+    return newItem;
+  };
+
+  const updateCurrentUser = (updates: Partial<DatabaseState['currentUser']>) => {
+    setState((prev) => ({
+      ...prev,
+      currentUser: {
+        ...prev.currentUser,
+        ...updates,
+      },
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId: activeOrganization.id,
+          actorName: updates.name || prev.currentUser.name,
+          action: 'Mise à jour profil utilisateur',
+          details: `Profil personnel mis à jour pour ${updates.name || prev.currentUser.name}`,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+  };
+
+  const recordBillingTransaction = (tx: BillingTransaction) => {
+    setState((prev) => ({
+      ...prev,
+      billingTransactions: [tx, ...(prev.billingTransactions || [])],
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId: tx.orgId || activeOrganization.id,
+          actorName: prev.currentUser.name,
+          action: 'Facturation SaaS enregistrée',
+          details: `Facture ${tx.invoiceNumber} — ${tx.amount} ${tx.currency} (${tx.paymentMethod})`,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+  };
+
   const updateOrganizationSettings = (updates: Partial<Organization>) => {
     updateOrganization(activeOrganization.id, updates);
   };
@@ -997,6 +1561,7 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       activeLocationId: 'loc_bonapriso',
       isAuthenticated: true,
       currentUser: INITIAL_PROFILES[0],
+      users: INITIAL_PROFILES,
       categories: INITIAL_CATEGORIES,
       products: INITIAL_PRODUCTS,
       tables: INITIAL_TABLES,
@@ -1007,6 +1572,15 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
       customers: INITIAL_CUSTOMERS,
       auditLogs: INITIAL_AUDIT_LOGS,
       subscriptionPlans: INITIAL_SUBSCRIPTION_PLANS,
+      billingTransactions: INITIAL_BILLING_TRANSACTIONS,
+      staffInvitations: INITIAL_STAFF_INVITATIONS,
+      reviews: INITIAL_REVIEWS,
+      internalNotes: INITIAL_INTERNAL_NOTES,
+      staffShifts: INITIAL_STAFF_SHIFTS,
+      dailyZReports: INITIAL_DAILY_Z_REPORTS,
+      expenses: INITIAL_EXPENSES,
+      supportTickets: INITIAL_SUPPORT_TICKETS,
+      platformSettings: INITIAL_PLATFORM_SETTINGS,
     });
     navigateTo('dashboard');
   };
@@ -1181,6 +1755,226 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     }));
   };
 
+  const updateSubscriptionPlan = (planId: SubscriptionPlanId, updates: Partial<SubscriptionPlan>) => {
+    setState((prev) => ({
+      ...prev,
+      subscriptionPlans: prev.subscriptionPlans.map((p) =>
+        p.id === planId ? { ...p, ...updates } : p
+      ),
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId: 'system',
+          actorName: prev.currentUser.name,
+          action: 'Formule SaaS modifiée (DATA WORK AGENCY)',
+          details: `Plan ${planId} mis à jour`,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+  };
+
+  const approveBillingTransaction = (txId: string) => {
+    setState((prev) => {
+      const targetTx = (prev.billingTransactions || []).find((tx) => tx.id === txId);
+      if (!targetTx) return prev;
+
+      const durationMonths =
+        targetTx.period === 'annual' ? 12 : targetTx.period === 'quarterly' ? 3 : 1;
+      const now = new Date();
+      const newEnd = new Date(now.getTime() + durationMonths * 30 * 86400000).toISOString();
+
+      const updatedTransactions = prev.billingTransactions.map((tx) =>
+        tx.id === txId
+          ? {
+              ...tx,
+              status: 'confirmed' as const,
+              confirmedAt: now.toISOString(),
+              operatorReference: tx.operatorReference || `DWA-VAL-${Date.now().toString().slice(-6)}`,
+            }
+          : tx
+      );
+
+      const updatedOrgs = prev.organizations.map((org) =>
+        org.id === targetTx.orgId
+          ? {
+              ...org,
+              subscriptionPlan: targetTx.planId,
+              subscriptionStatus: 'active' as const,
+              subscriptionStartedAt: now.toISOString(),
+              subscriptionEndsAt: newEnd,
+              paymentStatus: 'paid' as const,
+              billingPeriod: targetTx.period,
+            }
+          : org
+      );
+      const activeOrg = updatedOrgs.find((o) => o.id === prev.activeOrgId) || prev.organization;
+
+      return {
+        ...prev,
+        billingTransactions: updatedTransactions,
+        organizations: updatedOrgs,
+        organization: activeOrg,
+        auditLogs: [
+          {
+            id: `log_${Date.now()}`,
+            orgId: targetTx.orgId,
+            actorName: prev.currentUser.name,
+            action: 'Paiement SaaS approuvé (DATA WORK AGENCY)',
+            details: `Facture ${targetTx.invoiceNumber} confirmée (${targetTx.amount} ${targetTx.currency}) — Licence ${targetTx.planId.toUpperCase()} activée`,
+            createdAt: now.toISOString(),
+          },
+          ...prev.auditLogs,
+        ],
+      };
+    });
+  };
+
+  const rejectBillingTransaction = (txId: string, reason?: string) => {
+    setState((prev) => {
+      const targetTx = (prev.billingTransactions || []).find((tx) => tx.id === txId);
+      if (!targetTx) return prev;
+
+      return {
+        ...prev,
+        billingTransactions: prev.billingTransactions.map((tx) =>
+          tx.id === txId ? { ...tx, status: 'failed' as const } : tx
+        ),
+        auditLogs: [
+          {
+            id: `log_${Date.now()}`,
+            orgId: targetTx.orgId,
+            actorName: prev.currentUser.name,
+            action: 'Paiement SaaS rejeté (DATA WORK AGENCY)',
+            details: `Transaction ${targetTx.invoiceNumber} refusée${reason ? ` : ${reason}` : ''}`,
+            createdAt: new Date().toISOString(),
+          },
+          ...prev.auditLogs,
+        ],
+      };
+    });
+  };
+
+  const updateUserRole = (userId: string, role: UserRole) => {
+    setState((prev) => ({
+      ...prev,
+      users: (prev.users || []).map((u) => (u.id === userId ? { ...u, role } : u)),
+      currentUser:
+        prev.currentUser.id === userId ? { ...prev.currentUser, role } : prev.currentUser,
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId: 'system',
+          actorName: prev.currentUser.name,
+          action: 'Rôle utilisateur modifié',
+          details: `Utilisateur ${userId} attribué au rôle ${role}`,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+  };
+
+  const updatePlatformSettings = (updates: Partial<PlatformSettings>) => {
+    const safeTrialDays =
+      updates.defaultTrialDays !== undefined
+        ? Math.min(7, Math.max(1, updates.defaultTrialDays))
+        : undefined;
+    setState((prev) => ({
+      ...prev,
+      platformSettings: {
+        ...(prev.platformSettings || INITIAL_PLATFORM_SETTINGS),
+        ...updates,
+        ...(safeTrialDays !== undefined ? { defaultTrialDays: safeTrialDays } : {}),
+      },
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId: 'system',
+          actorName: prev.currentUser.name,
+          action: 'Paramètres SaaS mis à jour (DATA WORK AGENCY)',
+          details: 'Configuration générale de la plateforme actualisée',
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+  };
+
+  const addExpense = (
+    expense: Omit<ExpenseRecord, 'id' | 'orgId' | 'createdAt' | 'recordedBy'>
+  ): ExpenseRecord => {
+    const newExp: ExpenseRecord = {
+      ...expense,
+      id: `exp_${Date.now()}`,
+      orgId: currentOrgId,
+      recordedBy: state.currentUser.name,
+      createdAt: new Date().toISOString(),
+    };
+    setState((prev) => ({
+      ...prev,
+      expenses: [newExp, ...(prev.expenses || [])],
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId: currentOrgId,
+          actorName: prev.currentUser.name,
+          action: 'Dépense enregistrée',
+          details: `${newExp.title} (${newExp.amount} ${activeOrganization.currency})`,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+    return newExp;
+  };
+
+  const deleteExpense = (expenseId: string) => {
+    setState((prev) => ({
+      ...prev,
+      expenses: (prev.expenses || []).filter((e) => e.id !== expenseId),
+    }));
+  };
+
+  const submitSupportTicket = (
+    ticket: Omit<SupportTicket, 'id' | 'status' | 'createdAt' | 'updatedAt'>
+  ): SupportTicket => {
+    const now = new Date().toISOString();
+    const newTicket: SupportTicket = {
+      ...ticket,
+      id: `tkt_${Date.now()}`,
+      status: 'open',
+      createdAt: now,
+      updatedAt: now,
+    };
+    setState((prev) => ({
+      ...prev,
+      supportTickets: [newTicket, ...(prev.supportTickets || [])],
+    }));
+    return newTicket;
+  };
+
+  const updateSupportTicketStatus = (
+    ticketId: string,
+    status: SupportTicket['status'],
+    adminNote?: string
+  ) => {
+    setState((prev) => ({
+      ...prev,
+      supportTickets: (prev.supportTickets || []).map((tkt) =>
+        tkt.id === ticketId
+          ? {
+              ...tkt,
+              status,
+              adminNote: adminNote !== undefined ? adminNote : tkt.adminNote,
+              updatedAt: new Date().toISOString(),
+            }
+          : tkt
+      ),
+    }));
+  };
+
   const toggleRestaurantStatus = (orgId: string) => {
     setState((prev) => {
       const updatedOrgs = prev.organizations.map((org) => {
@@ -1199,12 +1993,508 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
     });
   };
 
+  const extendTrialDays = (orgId: string, days: number = 7) => {
+    setState((prev) => {
+      const updatedOrgs = prev.organizations.map((org) => {
+        if (org.id === orgId) {
+          const currentEnd = new Date(org.trialEndsAt).getTime();
+          const baseTime = currentEnd > Date.now() ? currentEnd : Date.now();
+          const newEnd = new Date(baseTime + days * 86400000).toISOString();
+          return {
+            ...org,
+            trialEndsAt: newEnd,
+            subscriptionStatus: 'trial' as const,
+          };
+        }
+        return org;
+      });
+      const activeOrg = updatedOrgs.find((o) => o.id === prev.activeOrgId) || prev.organization;
+      return {
+        ...prev,
+        organizations: updatedOrgs,
+        organization: activeOrg,
+        auditLogs: [
+          {
+            id: `log_${Date.now()}`,
+            orgId,
+            actorName: prev.currentUser.name,
+            action: 'Prolongation administrative essai (DATA WORK AGENCY)',
+            details: `Période d'essai prolongée de +${days} jours pour ${activeOrg.name}`,
+            createdAt: new Date().toISOString(),
+          },
+          ...prev.auditLogs,
+        ],
+      };
+    });
+  };
+
+  const activateSubscriptionManually = (orgId: string, planId: SubscriptionPlanId = 'business', durationMonths: number = 1) => {
+    setState((prev) => {
+      const now = new Date();
+      const newEnd = new Date(now.getTime() + durationMonths * 30 * 86400000).toISOString();
+      const updatedOrgs = prev.organizations.map((org) => {
+        if (org.id === orgId) {
+          return {
+            ...org,
+            subscriptionPlan: planId,
+            subscriptionStatus: 'active' as const,
+            subscriptionStartedAt: now.toISOString(),
+            subscriptionEndsAt: newEnd,
+            paymentStatus: 'paid' as const,
+          };
+        }
+        return org;
+      });
+      const activeOrg = updatedOrgs.find((o) => o.id === prev.activeOrgId) || prev.organization;
+      return {
+        ...prev,
+        organizations: updatedOrgs,
+        organization: activeOrg,
+        auditLogs: [
+          {
+            id: `log_${Date.now()}`,
+            orgId,
+            actorName: prev.currentUser.name,
+            action: 'Activation manuelle abonnement (DATA WORK AGENCY)',
+            details: `Abonnement ${planId.toUpperCase()} activé pour ${durationMonths} mois`,
+            createdAt: new Date().toISOString(),
+          },
+          ...prev.auditLogs,
+        ],
+      };
+    });
+  };
+
+  const populateStarterMenu = (orgId: string) => {
+    const starterCategories: Category[] = [
+      { id: `cat_${orgId}_grill`, orgId, name: 'Grillades & Poissons', nameFr: 'Grillades & Poissons', iconName: 'Flame', sortOrder: 1, isActive: true },
+      { id: `cat_${orgId}_plats`, orgId, name: 'Plats Traditionnels', nameFr: 'Plats Traditionnels', iconName: 'UtensilsCrossed', sortOrder: 2, isActive: true },
+      { id: `cat_${orgId}_drinks`, orgId, name: 'Boissons & Jus Frais', nameFr: 'Boissons & Jus Frais', iconName: 'Coffee', sortOrder: 3, isActive: true },
+      { id: `cat_${orgId}_desserts`, orgId, name: 'Desserts & Douceurs', nameFr: 'Desserts & Douceurs', iconName: 'IceCream', sortOrder: 4, isActive: true },
+    ];
+
+    const starterProducts: Product[] = [
+      {
+        id: `prod_${orgId}_1`,
+        orgId,
+        categoryId: `cat_${orgId}_grill`,
+        name: 'Bar Braisé Maison & Plantain Frit',
+        nameFr: 'Bar Braisé Maison & Plantain Frit',
+        description: 'Bar entier mariné aux épices du terroir, braisé au feu de bois avec beignets de plantain mûr (alloco).',
+        descriptionFr: 'Bar entier mariné aux épices du terroir, braisé au feu de bois avec beignets de plantain mûr (alloco).',
+        price: 5500,
+        costPrice: 2200,
+        image: '/src/assets/images/dish_grilled_fish_1792835864516.jpg',
+        isAvailable: true,
+        prepTimeMinutes: 25,
+        allergens: ['Poisson'],
+        sku: 'BRZ-01',
+      },
+      {
+        id: `prod_${orgId}_2`,
+        orgId,
+        categoryId: `cat_${orgId}_plats`,
+        name: 'Ndolé Royal aux Crevettes & Viande',
+        nameFr: 'Ndolé Royal aux Crevettes & Viande',
+        description: 'Feuilles de ndolé mijotées aux arachides fraîches, crevettes fumées et morceaux de bœuf tendre, servi avec miondo.',
+        descriptionFr: 'Feuilles de ndolé mijotées aux arachides fraîches, crevettes fumées et morceaux de bœuf tendre, servi avec miondo.',
+        price: 4500,
+        costPrice: 1800,
+        image: '/src/assets/images/dish_ndole_royal_1792835866049.jpg',
+        isAvailable: true,
+        prepTimeMinutes: 20,
+        allergens: ['Arachides', 'Crustacés'],
+        sku: 'NDL-02',
+      },
+      {
+        id: `prod_${orgId}_3`,
+        orgId,
+        categoryId: `cat_${orgId}_plats`,
+        name: 'Poulet DG aux Légumes Croquants',
+        nameFr: 'Poulet DG aux Légumes Croquants',
+        description: 'Poulet fermier doré sauté avec rondelles de plantain mûr, poivrons colorés, carottes, haricots verts et aromates.',
+        descriptionFr: 'Poulet fermier doré sauté avec rondelles de plantain mûr, poivrons colorés, carottes, haricots verts et aromates.',
+        price: 5000,
+        costPrice: 2000,
+        image: '/src/assets/images/dish_ndole_royal_1792835866049.jpg',
+        isAvailable: true,
+        prepTimeMinutes: 20,
+        allergens: [],
+        sku: 'PDG-03',
+      },
+      {
+        id: `prod_${orgId}_4`,
+        orgId,
+        categoryId: `cat_${orgId}_drinks`,
+        name: 'Jus de Bissap & Gingembre Frais',
+        nameFr: 'Jus de Bissap & Gingembre Frais',
+        description: 'Infusion de fleurs d’hibiscus bio, menthe fraîche et touche de gingembre piquant 100% naturel.',
+        descriptionFr: 'Infusion de fleurs d’hibiscus bio, menthe fraîche et touche de gingembre piquant 100% naturel.',
+        price: 1500,
+        costPrice: 400,
+        image: '/src/assets/images/restaurant_terrace_bar_1792835866677.jpg',
+        isAvailable: true,
+        prepTimeMinutes: 5,
+        allergens: [],
+        sku: 'BSP-04',
+      },
+    ];
+
+    setState((prev) => ({
+      ...prev,
+      categories: [...starterCategories, ...prev.categories.filter((c) => c.orgId !== orgId)],
+      products: [...starterProducts, ...prev.products.filter((p) => p.orgId !== orgId)],
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId,
+          actorName: prev.currentUser.name,
+          action: 'Suggestions de menu chargées',
+          details: '4 plats signatures et catégories types créés',
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+  };
+
+  // Profile & Vitrine Management
+  const updateOrganizationProfile = (updates: Partial<Organization>) => {
+    setState((prev) => {
+      const updatedOrgs = prev.organizations.map((org) => {
+        if (org.id === currentOrgId) {
+          return { ...org, ...updates };
+        }
+        return org;
+      });
+      const activeOrg = updatedOrgs.find((o) => o.id === currentOrgId) || prev.organization;
+      return {
+        ...prev,
+        organizations: updatedOrgs,
+        organization: activeOrg,
+        auditLogs: [
+          {
+            id: `log_${Date.now()}`,
+            orgId: currentOrgId,
+            actorName: prev.currentUser.name,
+            action: 'Mise à jour vitrine & profil restaurant',
+            details: 'Coordonnées, horaires ou galerie photos modifiés',
+            createdAt: new Date().toISOString(),
+          },
+          ...prev.auditLogs,
+        ],
+      };
+    });
+  };
+
+  const addGalleryImage = (imageUrl: string) => {
+    if (!imageUrl || !imageUrl.trim()) return;
+    const existingGallery = activeOrganization.gallery || [];
+    updateOrganizationProfile({
+      gallery: [...existingGallery, imageUrl.trim()],
+    });
+  };
+
+  const removeGalleryImage = (index: number) => {
+    const existingGallery = activeOrganization.gallery || [];
+    const updated = existingGallery.filter((_, i) => i !== index);
+    updateOrganizationProfile({ gallery: updated });
+  };
+
+  const reorderGalleryImages = (fromIndex: number, toIndex: number) => {
+    const existingGallery = [...(activeOrganization.gallery || [])];
+    if (fromIndex < 0 || fromIndex >= existingGallery.length || toIndex < 0 || toIndex >= existingGallery.length) return;
+    const [moved] = existingGallery.splice(fromIndex, 1);
+    existingGallery.splice(toIndex, 0, moved);
+    updateOrganizationProfile({ gallery: existingGallery });
+  };
+
+  // Customer Reviews
+  const addCustomerReview = (reviewData: Omit<CustomerReview, 'id' | 'createdAt' | 'status'>): CustomerReview => {
+    const newReview: CustomerReview = {
+      ...reviewData,
+      id: `rev_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      status: 'published',
+    };
+    setState((prev) => ({
+      ...prev,
+      reviews: [newReview, ...(prev.reviews || [])],
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId: newReview.orgId,
+          actorName: newReview.customerName,
+          action: 'Avis client déposé',
+          details: `Note: ${newReview.rating}/5 ${newReview.isVerifiedOrder ? '(Commande vérifiée)' : ''}`,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+    return newReview;
+  };
+
+  const updateReviewStatus = (reviewId: string, status: CustomerReview['status']) => {
+    setState((prev) => ({
+      ...prev,
+      reviews: (prev.reviews || []).map((r) => (r.id === reviewId ? { ...r, status } : r)),
+    }));
+  };
+
+  const replyToReview = (reviewId: string, replyText: string) => {
+    setState((prev) => ({
+      ...prev,
+      reviews: (prev.reviews || []).map((r) =>
+        r.id === reviewId
+          ? {
+              ...r,
+              reply: {
+                text: replyText,
+                authorName: `${prev.currentUser.name} (Direction)`,
+                repliedAt: new Date().toISOString(),
+              },
+            }
+          : r
+      ),
+    }));
+  };
+
+  // Internal Staff Notes
+  const addInternalNote = (title: string, content: string, urgency: 'low' | 'medium' | 'high' = 'medium') => {
+    const newNote: InternalStaffNote = {
+      id: `note_${Date.now()}`,
+      orgId: currentOrgId,
+      authorName: state.currentUser.name,
+      authorRole: state.currentUser.role,
+      title,
+      content,
+      urgency,
+      pinned: false,
+      createdAt: new Date().toISOString(),
+    };
+    setState((prev) => ({
+      ...prev,
+      internalNotes: [newNote, ...(prev.internalNotes || [])],
+    }));
+  };
+
+  const togglePinNote = (noteId: string) => {
+    setState((prev) => ({
+      ...prev,
+      internalNotes: (prev.internalNotes || []).map((n) =>
+        n.id === noteId ? { ...n, pinned: !n.pinned } : n
+      ),
+    }));
+  };
+
+  const deleteInternalNote = (noteId: string) => {
+    setState((prev) => ({
+      ...prev,
+      internalNotes: (prev.internalNotes || []).filter((n) => n.id !== noteId),
+    }));
+  };
+
+  // Staff Shifts & Clock-in
+  const clockInStaff = (userName: string, userRole: UserRole, notes?: string): StaffShift => {
+    const newShift: StaffShift = {
+      id: `shift_${Date.now()}`,
+      orgId: currentOrgId,
+      userId: state.currentUser.id,
+      userName,
+      userRole,
+      clockIn: new Date().toISOString(),
+      date: new Date().toISOString().split('T')[0],
+      status: 'active',
+      notes,
+    };
+    setState((prev) => ({
+      ...prev,
+      staffShifts: [newShift, ...(prev.staffShifts || [])],
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId: currentOrgId,
+          actorName: userName,
+          action: 'Prise de service (Clock-in)',
+          details: `Arrivée pointée à ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+    return newShift;
+  };
+
+  const clockOutStaff = (shiftId: string, notes?: string) => {
+    const now = new Date();
+    setState((prev) => ({
+      ...prev,
+      staffShifts: (prev.staffShifts || []).map((s) => {
+        if (s.id === shiftId) {
+          const diffMinutes = Math.max(1, Math.round((now.getTime() - new Date(s.clockIn).getTime()) / 60000));
+          return {
+            ...s,
+            clockOut: now.toISOString(),
+            status: 'completed',
+            totalMinutes: diffMinutes,
+            notes: notes || s.notes,
+          };
+        }
+        return s;
+      }),
+    }));
+  };
+
+  // Daily Activity & Z-Report
+  const generateZReportData = (dateStr?: string): Omit<DailyZReport, 'id' | 'createdAt'> => {
+    const targetDate = dateStr || new Date().toISOString().split('T')[0];
+    const dayOrders = scopedOrders.filter((o) => o.createdAt.startsWith(targetDate));
+    const completed = dayOrders.filter((o) => o.status === 'completed' || o.paymentStatus === 'paid');
+    const cancelled = dayOrders.filter((o) => o.status === 'cancelled');
+
+    const grossRevenue = completed.reduce((sum, o) => sum + (o.subtotal + o.taxAmount), 0);
+    const discountsTotal = completed.reduce((sum, o) => sum + (o.discountAmount || 0), 0);
+    const refundsTotal = dayOrders.filter((o) => o.paymentStatus === 'refunded').reduce((sum, o) => sum + o.totalAmount, 0);
+    const netRevenue = Math.max(0, grossRevenue - discountsTotal - refundsTotal);
+    const taxTotal = completed.reduce((sum, o) => sum + (o.taxAmount || 0), 0);
+    const averageOrderValue = completed.length > 0 ? Math.round(netRevenue / completed.length) : 0;
+
+    const paymentBreakdown = {
+      cash: completed.filter((o) => o.paymentMethod === 'cash').reduce((sum, o) => sum + o.totalAmount, 0),
+      card: completed.filter((o) => o.paymentMethod === 'card').reduce((sum, o) => sum + o.totalAmount, 0),
+      mobile_money: completed.filter((o) => o.paymentMethod === 'mobile_money').reduce((sum, o) => sum + o.totalAmount, 0),
+    };
+
+    // Category breakdown
+    const catMap = new Map<string, { categoryId: string; categoryName: string; revenue: number; quantity: number }>();
+    for (const ord of completed) {
+      for (const itm of ord.items) {
+        const prod = scopedProducts.find((p) => p.id === itm.productId);
+        const cat = scopedCategories.find((c) => c.id === prod?.categoryId);
+        const catId = cat?.id || 'other';
+        const catName = cat ? (language === 'fr' ? cat.nameFr : cat.name) : 'Autres';
+        const curr = catMap.get(catId) || { categoryId: catId, categoryName: catName, revenue: 0, quantity: 0 };
+        curr.revenue += itm.totalPrice;
+        curr.quantity += itm.quantity;
+        catMap.set(catId, curr);
+      }
+    }
+
+    // Hourly heatmap
+    const hourMap = new Array(24).fill(0).map((_, h) => ({ hour: h, orderCount: 0, revenue: 0 }));
+    for (const ord of completed) {
+      const h = new Date(ord.createdAt).getHours();
+      if (hourMap[h]) {
+        hourMap[h].orderCount += 1;
+        hourMap[h].revenue += ord.totalAmount;
+      }
+    }
+
+    // Top dishes
+    const dishMap = new Map<string, { productId: string; productName: string; quantity: number; revenue: number }>();
+    for (const ord of completed) {
+      for (const itm of ord.items) {
+        const curr = dishMap.get(itm.productId) || { productId: itm.productId, productName: itm.name, quantity: 0, revenue: 0 };
+        curr.quantity += itm.quantity;
+        curr.revenue += itm.totalPrice;
+        dishMap.set(itm.productId, curr);
+      }
+    }
+    const dishes = Array.from(dishMap.values());
+    const topDishesByQuantity = [...dishes].sort((a, b) => b.quantity - a.quantity).slice(0, 5);
+    const topDishesByRevenue = [...dishes].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+
+    // Staff attendance
+    const dayShifts = scopedStaffShifts.filter((s) => s.date === targetDate);
+    const staffAttendance = dayShifts.map((s) => ({
+      staffName: s.userName,
+      role: s.userRole,
+      clockIn: new Date(s.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      clockOut: s.clockOut ? new Date(s.clockOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
+      durationHours: s.totalMinutes ? Math.round((s.totalMinutes / 60) * 10) / 10 : 0,
+    }));
+
+    return {
+      orgId: currentOrgId,
+      reportDate: targetDate,
+      openingTime: '10:00',
+      closingTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      closedBy: `${state.currentUser.name} (${state.currentUser.role})`,
+      grossRevenue,
+      discountsTotal,
+      refundsTotal,
+      netRevenue,
+      taxTotal,
+      totalOrders: dayOrders.length,
+      completedOrders: completed.length,
+      cancelledOrders: cancelled.length,
+      averageOrderValue,
+      paymentBreakdown,
+      categoryBreakdown: Array.from(catMap.values()),
+      hourlyHeatmap: hourMap.filter((h) => h.orderCount > 0),
+      topDishesByQuantity,
+      topDishesByRevenue,
+      staffAttendance,
+      cashDrawerStarting: 50000,
+      cashDrawerActual: 50000 + paymentBreakdown.cash,
+      cashDiscrepancy: 0,
+      notes: '',
+    };
+  };
+
+  const performDailyClosing = (closingData: {
+    cashDrawerStarting: number;
+    cashDrawerActual: number;
+    notes?: string;
+    openingTime?: string;
+    closingTime?: string;
+  }): DailyZReport => {
+    const generated = generateZReportData();
+    const cashSales = generated.paymentBreakdown.cash;
+    const expectedCash = closingData.cashDrawerStarting + cashSales;
+    const discrepancy = closingData.cashDrawerActual - expectedCash;
+
+    const newReport: DailyZReport = {
+      ...generated,
+      id: `zrep_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      openingTime: closingData.openingTime || generated.openingTime,
+      closingTime: closingData.closingTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      cashDrawerStarting: closingData.cashDrawerStarting,
+      cashDrawerActual: closingData.cashDrawerActual,
+      cashDiscrepancy: discrepancy,
+      notes: closingData.notes || '',
+    };
+
+    setState((prev) => ({
+      ...prev,
+      dailyZReports: [newReport, ...(prev.dailyZReports || [])],
+      auditLogs: [
+        {
+          id: `log_${Date.now()}`,
+          orgId: currentOrgId,
+          actorName: prev.currentUser.name,
+          action: 'Clôture de journée (Rapport Z)',
+          details: `Net: ${newReport.netRevenue} XAF | Écart caisse: ${discrepancy} XAF`,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev.auditLogs,
+      ],
+    }));
+
+    return newReport;
+  };
+
   return (
     <RestaurantContext.Provider
       value={{
         state,
         language,
         setLanguage,
+        theme,
+        setTheme,
+        effectiveTheme,
         activeView,
         setActiveView,
         navigateTo,
@@ -1240,6 +2530,46 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
         scopedCustomers,
         scopedAuditLogs,
         scopedLocations,
+        scopedReviews,
+        scopedInternalNotes,
+        scopedStaffShifts,
+        scopedDailyZReports,
+        scopedExpenses,
+        getPlanEntitlements,
+        addExpense,
+        deleteExpense,
+
+        // Profile & Vitrine
+        updateOrganizationProfile,
+        addGalleryImage,
+        removeGalleryImage,
+        reorderGalleryImages,
+
+        // Customer Reviews
+        addCustomerReview,
+        updateReviewStatus,
+        replyToReview,
+
+        // Internal Staff Notes
+        addInternalNote,
+        togglePinNote,
+        deleteInternalNote,
+
+        // Staff Attendance
+        clockInStaff,
+        clockOutStaff,
+
+        // Daily Activity & Z-Report
+        generateZReportData,
+        performDailyClosing,
+
+        // Public Storefront & Preview Isolation
+        publicPreviewMode,
+        publicTableParam,
+        publicUrlInvalidSlug,
+        openPublicStorefront,
+        exitPublicPreview,
+        checkReservationAvailability,
 
         // Business logic
         createOrder,
@@ -1254,6 +2584,10 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
         updateProduct,
         deleteProduct,
         toggleProductAvailability,
+        createCategory,
+        createInventoryItem,
+        updateCurrentUser,
+        recordBillingTransaction,
         updateOrganizationSettings,
         completeOnboarding,
         resetToDemo,
@@ -1264,9 +2598,21 @@ export const RestaurantProvider: React.FC<{ children: ReactNode }> = ({ children
         revokeStaffInvitation,
         acceptStaffInvitation,
 
+        // Support Tickets
+        submitSupportTicket,
+        updateSupportTicketStatus,
+
         // SuperAdmin Platform Operations
         updateSubscriptionPlanPrice,
+        updateSubscriptionPlan,
+        approveBillingTransaction,
+        rejectBillingTransaction,
+        updateUserRole,
+        updatePlatformSettings,
         toggleRestaurantStatus,
+        extendTrialDays,
+        activateSubscriptionManually,
+        populateStarterMenu,
       }}
     >
       {children}

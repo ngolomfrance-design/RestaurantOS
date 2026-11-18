@@ -1,29 +1,39 @@
 import React, { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useRestaurant } from '../../context/RestaurantContext';
 import { useTranslation } from '../../translations';
 import { Table, TableStatus } from '../../types/restaurant';
-import { formatCurrency, getTableStatusBadge } from '../../utils/formatters';
+import { formatCurrency, formatTime, getTableStatusBadge } from '../../utils/formatters';
 import {
-  LayoutGrid,
   Users,
   Clock,
   ArrowRightLeft,
-  CheckCircle,
-  Plus,
   Receipt,
   X,
-  Sparkles,
-  AlertCircle,
+  QrCode,
+  Copy,
+  Check,
+  Eye,
 } from 'lucide-react';
 
 export const TableManagement: React.FC = () => {
-  const { state, language, updateTableStatus, transferTableOrder, setActiveView } = useRestaurant();
+  const {
+    scopedTables,
+    scopedOrders,
+    activeOrganization,
+    language,
+    updateTableStatus,
+    transferTableOrder,
+    setActiveView,
+    openPublicStorefront,
+  } = useRestaurant();
   const t = useTranslation(language);
 
   const [selectedArea, setSelectedArea] = useState<string>('all');
   const [activeTableModal, setActiveTableModal] = useState<Table | null>(null);
   const [transferTargetId, setTransferTargetId] = useState<string>('');
   const [transferError, setTransferError] = useState<string>('');
+  const [copiedTableQr, setCopiedTableQr] = useState<boolean>(false);
 
   const areas = [
     { id: 'all', labelFr: 'Tout l’établissement', labelEn: 'All Areas' },
@@ -33,19 +43,20 @@ export const TableManagement: React.FC = () => {
     { id: 'bar', labelFr: 'Comptoir Bar', labelEn: 'Bar Counter' },
   ];
 
-  const filteredTables = state.tables.filter(
-    (t) => selectedArea === 'all' || t.area === selectedArea
+  const filteredTables = scopedTables.filter(
+    (tb) => selectedArea === 'all' || tb.area === selectedArea
   );
 
-  const occupiedCount = state.tables.filter((t) => t.status === 'occupied').length;
-  const availableCount = state.tables.filter((t) => t.status === 'available').length;
-  const reservedCount = state.tables.filter((t) => t.status === 'reserved').length;
-  const cleaningCount = state.tables.filter((t) => t.status === 'cleaning').length;
+  const occupiedCount = scopedTables.filter((tb) => tb.status === 'occupied').length;
+  const availableCount = scopedTables.filter((tb) => tb.status === 'available').length;
+  const reservedCount = scopedTables.filter((tb) => tb.status === 'reserved').length;
+  const cleaningCount = scopedTables.filter((tb) => tb.status === 'cleaning').length;
 
   const handleTableClick = (table: Table) => {
     setActiveTableModal(table);
     setTransferTargetId('');
     setTransferError('');
+    setCopiedTableQr(false);
   };
 
   const handleTransfer = () => {
@@ -64,57 +75,56 @@ export const TableManagement: React.FC = () => {
 
   // Find linked order if occupied
   const linkedOrder = activeTableModal?.currentOrderId
-    ? state.orders.find((o) => o.id === activeTableModal.currentOrderId)
+    ? scopedOrders.find((o) => o.id === activeTableModal.currentOrderId)
     : null;
 
+  const getTableQrUrl = (tableNumber: string) =>
+    `${window.location.origin}/menu/${activeOrganization.slug || activeOrganization.id}?table=${encodeURIComponent(tableNumber)}`;
+
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header and Live Occupancy Stats */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             {t.tables.title}
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            {state.organization.name} · {t.tables.subtitle}
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {activeOrganization.name} · {t.tables.subtitle}
           </p>
         </div>
 
-        {/* Status Counter Pills (Interactive stats) */}
-        <div className="flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="font-semibold font-mono tabular-nums">{availableCount}</span>
-            <span>{t.tables.status.available}</span>
+        {/* Status Summary Strip */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+            <span className="font-bold font-mono tabular-nums">{availableCount}</span>
+            <span className="whitespace-nowrap">{t.tables.status.available}</span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 text-rose-800 border border-rose-200">
-            <span className="w-2 h-2 rounded-full bg-rose-500" />
-            <span className="font-semibold font-mono tabular-nums">{occupiedCount}</span>
-            <span>{t.tables.status.occupied}</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+            <span className="font-bold font-mono tabular-nums">{occupiedCount}</span>
+            <span className="whitespace-nowrap">{t.tables.status.occupied}</span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="font-semibold font-mono tabular-nums">{reservedCount}</span>
-            <span>{t.tables.status.reserved}</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+            <span className="font-bold font-mono tabular-nums">{reservedCount}</span>
+            <span className="whitespace-nowrap">{t.tables.status.reserved}</span>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 text-sky-800 border border-sky-200">
-            <span className="w-2 h-2 rounded-full bg-sky-500" />
-            <span className="font-semibold font-mono tabular-nums">{cleaningCount}</span>
-            <span>{t.tables.status.cleaning}</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+            <span className="font-bold font-mono tabular-nums">{cleaningCount}</span>
+            <span className="whitespace-nowrap">{t.tables.status.cleaning}</span>
           </div>
         </div>
       </div>
 
       {/* Area Selector Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto scrollbar-none">
         {areas.map((a) => (
           <button
             key={a.id}
             onClick={() => setSelectedArea(a.id)}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-colors ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
               selectedArea === a.id
-                ? 'bg-slate-900 text-white font-semibold'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                ? 'bg-[#0B192C] dark:bg-amber-500 text-white dark:text-slate-950 font-semibold'
+                : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
             }`}
           >
             {language === 'fr' ? a.labelFr : a.labelEn}
@@ -131,73 +141,74 @@ export const TableManagement: React.FC = () => {
           const isReserved = table.status === 'reserved';
 
           return (
-            <div
+            <button
+              type="button"
               key={table.id}
               onClick={() => handleTableClick(table)}
-              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between min-h-[140px] hover:shadow-md ${
+              className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer flex flex-col justify-between min-h-[140px] hover:shadow-md ${
                 isOccupied
-                  ? 'border-rose-300 bg-rose-50/30 hover:border-rose-400'
+                  ? 'border-rose-300 dark:border-rose-800 bg-rose-50/40 dark:bg-rose-950/30 hover:border-rose-400'
                   : isReserved
-                  ? 'border-amber-300 bg-amber-50/20 hover:border-amber-400'
+                  ? 'border-amber-300 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/30 hover:border-amber-400'
                   : isCleaning
-                  ? 'border-sky-300 bg-sky-50/20 hover:border-sky-400'
-                  : 'border-emerald-200 bg-white hover:border-emerald-400'
+                  ? 'border-sky-300 dark:border-sky-800 bg-sky-50/30 dark:bg-sky-950/30 hover:border-sky-400'
+                  : 'border-emerald-200 dark:border-emerald-900/70 bg-white dark:bg-slate-900 hover:border-emerald-400 dark:hover:border-emerald-600'
               }`}
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-base font-bold text-slate-900 tracking-tight">
+              <div className="flex items-start justify-between w-full gap-2">
+                <div className="min-w-0">
+                  <div className="text-base font-bold text-slate-900 dark:text-white tracking-tight font-mono tabular-nums">
                     {table.number}
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium truncate max-w-[110px]">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
                     {table.name}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+                <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 font-medium shrink-0 font-mono tabular-nums">
                   <Users className="w-3.5 h-3.5 text-slate-400" />
                   <span>{table.capacity}</span>
                 </div>
               </div>
 
               {/* Status & Active Order Info */}
-              <div className="mt-4 pt-2 border-t border-slate-100 flex flex-col gap-1">
+              <div className="mt-4 pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-1 w-full">
                 <div className="flex items-center justify-between text-xs">
                   <span className={`font-semibold text-[11px] ${badge.color}`}>{badge.label}</span>
                 </div>
                 {table.currentGuestName && (
-                  <div className="text-[11px] font-medium text-slate-700 truncate">
+                  <div className="text-[11px] font-medium text-slate-700 dark:text-slate-200 truncate">
                     {table.currentGuestName}
                   </div>
                 )}
                 {isOccupied && table.seatedAt && (
-                  <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                  <div className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1 font-mono tabular-nums">
                     <Clock className="w-3 h-3" />
-                    <span>Depuis 12h40</span>
+                    <span>Depuis {formatTime(table.seatedAt)}</span>
                   </div>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
 
       {/* MODAL: Table Detail, Bill Review, Order Transfer & Status Management */}
       {activeTableModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 border border-slate-200 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="font-bold text-base text-slate-900">
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
                   {activeTableModal.name} ({activeTableModal.capacity} personnes)
                 </h3>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-slate-500 dark:text-slate-400">
                   Zone : {areas.find((a) => a.id === activeTableModal.area)?.labelFr || activeTableModal.area}
                 </div>
               </div>
               <button
                 onClick={() => setActiveTableModal(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -205,8 +216,8 @@ export const TableManagement: React.FC = () => {
 
             {/* Quick Status Override */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">Changer l'état de la table</label>
-              <div className="grid grid-cols-4 gap-2">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Changer l&apos;état de la table</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {(['available', 'occupied', 'reserved', 'cleaning'] as TableStatus[]).map((st) => (
                   <button
                     key={st}
@@ -214,10 +225,10 @@ export const TableManagement: React.FC = () => {
                       updateTableStatus(activeTableModal.id, st);
                       setActiveTableModal({ ...activeTableModal, status: st });
                     }}
-                    className={`py-2 px-2 rounded-lg text-xs font-medium border text-center transition-colors ${
+                    className={`py-2 px-2 rounded-lg text-xs font-medium border text-center transition-colors whitespace-nowrap cursor-pointer ${
                       activeTableModal.status === st
-                        ? 'border-slate-900 bg-slate-900 text-white font-bold'
-                        : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'border-[#0B192C] dark:border-amber-500 bg-[#0B192C] dark:bg-amber-500 text-white dark:text-slate-950 font-bold'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     {getTableStatusBadge(st, language).label}
@@ -228,73 +239,121 @@ export const TableManagement: React.FC = () => {
 
             {/* If Occupied with an Active Order */}
             {linkedOrder && (
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <Receipt className="w-4 h-4 text-slate-600" />
+              <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <Receipt className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                     Commande en cours : {linkedOrder.orderNumber}
                   </span>
-                  <span className="font-mono font-bold text-xs text-amber-700">
-                    {formatCurrency(linkedOrder.totalAmount, state.organization.currency)}
+                  <span className="font-mono tabular-nums font-bold text-xs text-amber-700 dark:text-amber-400 whitespace-nowrap">
+                    {formatCurrency(linkedOrder.totalAmount, activeOrganization.currency)}
                   </span>
                 </div>
 
-                <div className="max-h-36 overflow-y-auto space-y-1 divide-y divide-slate-100 text-xs">
+                <div className="max-h-36 overflow-y-auto space-y-1 divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                   {linkedOrder.items.map((it) => (
-                    <div key={it.id} className="pt-1 first:pt-0 flex justify-between text-slate-700">
+                    <div key={it.id} className="pt-1 first:pt-0 flex justify-between text-slate-700 dark:text-slate-300">
                       <span>{it.quantity}x {it.name}</span>
                       <span className="font-mono tabular-nums">
-                        {formatCurrency(it.totalPrice, state.organization.currency)}
+                        {formatCurrency(it.totalPrice, activeOrganization.currency)}
                       </span>
                     </div>
                   ))}
                 </div>
 
                 {/* Transfer Order to another available table */}
-                <div className="pt-2 border-t border-slate-200 space-y-2">
-                  <div className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                    <ArrowRightLeft className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Transférer l'addition vers une autre table libre</span>
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                    <ArrowRightLeft className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    <span>Transférer l&apos;addition vers une autre table libre</span>
                   </div>
 
                   <div className="flex gap-2">
                     <select
                       value={transferTargetId}
                       onChange={(e) => setTransferTargetId(e.target.value)}
-                      className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs"
+                      className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg text-xs"
                     >
                       <option value="">Sélectionner une table libre...</option>
-                      {state.tables
-                        .filter((t) => t.id !== activeTableModal.id && t.status === 'available')
-                        .map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name} ({t.capacity} pers.)
+                      {scopedTables
+                        .filter((tb) => tb.id !== activeTableModal.id && tb.status === 'available')
+                        .map((tb) => (
+                          <option key={tb.id} value={tb.id}>
+                            {tb.name} ({tb.capacity} pers.)
                           </option>
                         ))}
                     </select>
                     <button
                       disabled={!transferTargetId}
                       onClick={handleTransfer}
-                      className="px-3 py-1.5 bg-slate-900 disabled:opacity-40 text-white font-medium text-xs rounded-lg transition-colors"
+                      className="px-3 py-1.5 bg-[#0B192C] dark:bg-amber-500 dark:text-slate-950 disabled:opacity-40 text-white font-semibold text-xs rounded-lg transition-colors whitespace-nowrap cursor-pointer"
                     >
                       Transférer
                     </button>
                   </div>
                   {transferError && (
-                    <div className="text-xs text-rose-600 font-medium">{transferError}</div>
+                    <div className="text-xs text-rose-600 dark:text-rose-400 font-medium">{transferError}</div>
                   )}
                 </div>
               </div>
             )}
 
+            {/* Table QR Code Generator (Public Table Ordering URL - Zero Admin Secrets) */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="w-20 h-20 rounded-xl border border-slate-200 dark:border-slate-700 bg-white p-1.5 shrink-0 flex items-center justify-center">
+                <QRCodeSVG
+                  value={getTableQrUrl(activeTableModal.number)}
+                  size={68}
+                  level="M"
+                  bgColor="#FFFFFF"
+                  fgColor="#0B192C"
+                />
+              </div>
+              <div className="flex-1 min-w-0 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+                  <QrCode className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>QR Code Public — {activeTableModal.name}</span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">
+                  {getTableQrUrl(activeTableModal.number)}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(getTableQrUrl(activeTableModal.number));
+                      setCopiedTableQr(true);
+                      setTimeout(() => setCopiedTableQr(false), 2000);
+                    }}
+                    className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-[11px] font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1 whitespace-nowrap cursor-pointer"
+                  >
+                    {copiedTableQr ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedTableQr ? 'Copié' : 'Copier lien'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tableNum = activeTableModal.number;
+                      setActiveTableModal(null);
+                      openPublicStorefront(true, tableNum);
+                    }}
+                    className="px-2.5 py-1 bg-[#0B192C] dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-[11px] font-semibold text-white flex items-center gap-1 whitespace-nowrap cursor-pointer"
+                  >
+                    <Eye className="w-3 h-3 text-amber-400" />
+                    <span>Voir comme un client</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Quick Actions Footer */}
-            <div className="flex gap-2.5 pt-2">
+            <div className="flex flex-wrap gap-2.5 pt-2">
               <button
                 onClick={() => {
                   setActiveTableModal(null);
                   setActiveView('pos');
                 }}
-                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer"
               >
                 <span>Prendre commande sur cette table</span>
               </button>
@@ -304,7 +363,7 @@ export const TableManagement: React.FC = () => {
                     updateTableStatus(activeTableModal.id, 'available');
                     setActiveTableModal(null);
                   }}
-                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-colors"
+                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-colors whitespace-nowrap cursor-pointer"
                 >
                   Marquer libre
                 </button>

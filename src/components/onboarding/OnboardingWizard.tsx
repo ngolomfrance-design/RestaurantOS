@@ -133,22 +133,19 @@ export const OnboardingWizard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 sm:p-6 selection:bg-amber-500/20 selection:text-amber-300">
+    <div className="min-h-screen bg-[#0B192C] text-slate-100 flex flex-col justify-between p-4 sm:p-6 selection:bg-amber-500/20 selection:text-amber-300">
       {/* Top Header */}
-      <header className="max-w-3xl w-full mx-auto flex items-center justify-between border-b border-slate-800 pb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-slate-950 font-bold flex items-center justify-center text-sm shadow-xs">
+      <header className="max-w-3xl w-full mx-auto flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="flex items-center gap-2.5 whitespace-nowrap">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 font-extrabold flex items-center justify-center text-sm shadow-xs">
             R
           </div>
-          <div>
-            <div className="font-bold text-sm text-white">RestaurantOS</div>
-            <div className="text-[10px] text-amber-400 tracking-wider uppercase font-semibold">DATA WORK AGENCY</div>
-          </div>
+          <div className="font-bold text-base text-white">RestaurantOS</div>
         </div>
 
         <button
           onClick={() => navigateTo('marketing')}
-          className="text-xs text-slate-400 hover:text-white transition-colors"
+          className="text-xs text-slate-300 hover:text-white transition-colors cursor-pointer whitespace-nowrap"
         >
           {language === 'fr' ? 'Quitter la configuration' : 'Exit Setup'}
         </button>
@@ -166,13 +163,13 @@ export const OnboardingWizard: React.FC = () => {
 
         {/* STEP 1: WELCOME SCREEN */}
         {mode === 'welcome' && (
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-md space-y-8 text-center animate-in fade-in">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+          <div className="bg-[#10223A] border border-white/15 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-md space-y-8 text-center animate-in fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-400/25 text-amber-400 flex items-center justify-center mx-auto">
               <Store className="w-8 h-8" />
             </div>
 
             <div className="space-y-3">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+              <h1 className="font-serif-luxury text-3xl sm:text-4xl font-bold tracking-tight text-white text-balance">
                 Bienvenue sur RestaurantOS !
               </h1>
               <p className="text-sm text-slate-300 max-w-lg mx-auto leading-relaxed">
@@ -217,11 +214,11 @@ export const OnboardingWizard: React.FC = () => {
 
         {/* STEP 2: CREATE RESTAURANT FORM */}
         {mode === 'create' && (
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6 animate-in fade-in">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className="bg-[#10223A] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6 animate-in fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <button
                 onClick={() => setMode('welcome')}
-                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Retour au choix</span>
@@ -230,7 +227,7 @@ export const OnboardingWizard: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-xl font-bold tracking-tight text-white">
+              <h2 className="font-serif-luxury text-2xl font-bold tracking-tight text-white">
                 Configurer votre restaurant
               </h2>
               <p className="text-xs text-slate-400">
@@ -431,11 +428,11 @@ export const OnboardingWizard: React.FC = () => {
 
         {/* STEP 3: JOIN RESTAURANT */}
         {mode === 'join' && (
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6 animate-in fade-in">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className="bg-[#10223A] border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6 animate-in fade-in">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <button
                 onClick={() => setMode('welcome')}
-                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Retour au choix</span>
@@ -444,7 +441,7 @@ export const OnboardingWizard: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-xl font-bold tracking-tight text-white">
+              <h2 className="font-serif-luxury text-2xl font-bold tracking-tight text-white">
                 Rejoindre un restaurant existant
               </h2>
               <p className="text-xs text-slate-400">
@@ -478,14 +475,14 @@ export const OnboardingWizard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setMode('create')}
-                  className="text-xs text-amber-400 hover:underline"
+                  className="text-xs text-amber-400 hover:underline cursor-pointer"
                 >
                   Vous préférez créer votre propre restaurant ?
                 </button>
 
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs rounded-xl"
+                  className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Vérifier l’invitation
                 </button>
@@ -496,8 +493,8 @@ export const OnboardingWizard: React.FC = () => {
       </main>
 
       {/* Footer Attribution */}
-      <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-900">
-        RestaurantOS — Une solution développée par <strong className="text-slate-400">DATA WORK AGENCY</strong>
+      <footer className="py-4 text-center text-xs text-slate-400 border-t border-white/10">
+        RestaurantOS — Une solution développée par <strong className="text-slate-200">DATA WORK AGENCY</strong>
       </footer>
     </div>
   );

@@ -24,16 +24,30 @@ import {
   CreditCard,
   LayoutGrid,
   Menu,
+  Instagram,
+  Clock,
 } from 'lucide-react';
 
 export const MarketingWebsite: React.FC = () => {
-  const { navigateTo, language, setLanguage, loginDemo } = useRestaurant();
+  const { state, navigateTo, language, setLanguage, loginDemo, submitSupportTicket } = useRestaurant();
   const t = useTranslation(language);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [modalType, setModalType] = useState<'contact' | 'terms' | 'privacy' | null>(null);
   const [contactSubmitted, setContactSubmitted] = useState(false);
+  const [supportForm, setSupportForm] = useState({
+    requesterName: '',
+    restaurantName: '',
+    requesterEmail: '',
+    requesterPhone: '',
+    subject: 'Demande de démonstration / déploiement',
+    message: '',
+  });
+  const activePlans = state.subscriptionPlans?.length ? state.subscriptionPlans : INITIAL_SUBSCRIPTION_PLANS;
+  const agencyPhone = state.platformSettings?.supportPhone || '+237 690 37 04 54';
+  const agencyEmail = state.platformSettings?.supportEmail || 'dataworkagency0@gmail.com';
+  const agencyInstagram = state.platformSettings?.supportInstagram || 'Data Work Agency';
 
   // 9 Core Real Features
   const features = [
@@ -152,62 +166,57 @@ export const MarketingWebsite: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-amber-500/20 selection:text-amber-300">
-      {/* A. BARRE DE NAVIGATION */}
-      <header className="h-16 px-4 md:px-12 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 flex items-center justify-between gap-4">
-        {/* Logo RestaurantOS */}
-        <div className="flex items-center gap-2.5 whitespace-nowrap shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-slate-950 font-bold flex items-center justify-center text-sm shadow-xs">
+    <div className="min-h-screen bg-[#0B192C] text-slate-100 flex flex-col justify-between selection:bg-amber-500/20 selection:text-amber-300">
+      {/* A. BARRE DE NAVIGATION (Clean 3-Zone Contract) */}
+      <header className="h-16 px-4 md:px-10 bg-[#0B192C]/95 backdrop-blur-md border-b border-white/10 sticky top-0 z-50 flex items-center justify-between gap-4">
+        {/* Zone 1: Single-line Wordmark */}
+        <a
+          href="#hero"
+          className="flex items-center gap-2.5 whitespace-nowrap shrink-0 group"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 font-extrabold flex items-center justify-center text-sm shadow-xs">
             R
           </div>
-          <div>
-            <span className="text-base font-bold tracking-tight text-white block leading-tight">
-              RestaurantOS
-            </span>
-            <span className="text-[10px] text-amber-400 font-medium tracking-wider block uppercase">
-              DATA WORK AGENCY
-            </span>
-          </div>
-        </div>
+          <span className="text-base font-bold tracking-tight text-white">
+            RestaurantOS
+          </span>
+        </a>
 
-        {/* Desktop Nav Links */}
+        {/* Zone 2: Clean Desktop Nav Links */}
         <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-slate-300">
-          <a href="#hero" className="hover:text-white transition-colors">
+          <a href="#hero" className="hover:text-amber-300 transition-colors whitespace-nowrap shrink-0">
             Accueil
           </a>
-          <a href="#features" className="hover:text-white transition-colors">
+          <a href="#features" className="hover:text-amber-300 transition-colors whitespace-nowrap shrink-0">
             Fonctionnalités
           </a>
-          <a href="#solutions" className="hover:text-white transition-colors">
+          <a href="#solutions" className="hover:text-amber-300 transition-colors whitespace-nowrap shrink-0">
             Solutions
           </a>
-          <a href="#pricing" className="hover:text-white transition-colors">
+          <a href="#pricing" className="hover:text-amber-300 transition-colors whitespace-nowrap shrink-0">
             Tarifs
           </a>
-          <a href="#faq" className="hover:text-white transition-colors">
+          <a href="#faq" className="hover:text-amber-300 transition-colors whitespace-nowrap shrink-0">
             FAQ
           </a>
         </nav>
 
-        {/* Right Action buttons */}
+        {/* Zone 3: Language toggle, Login & Primary CTA */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Language toggle */}
           <button
             onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')}
-            className="text-xs font-semibold uppercase text-slate-400 hover:text-white transition-colors px-2 py-1 rounded"
+            className="text-xs font-semibold uppercase text-slate-300 hover:text-white transition-colors px-2 py-1 rounded cursor-pointer whitespace-nowrap"
           >
             {language}
           </button>
 
-          {/* Connexion */}
           <button
             onClick={() => navigateTo('login')}
-            className="px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 rounded-lg transition-colors cursor-pointer"
+            className="hidden sm:inline-flex px-3 py-2 text-xs font-semibold text-slate-200 hover:text-white transition-colors cursor-pointer whitespace-nowrap"
           >
             Connexion
           </button>
 
-          {/* Bouton principal « Commencer gratuitement » */}
           <button
             onClick={() => navigateTo('register')}
             className="px-4 py-2 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-lg shadow-sm transition-colors whitespace-nowrap cursor-pointer"
@@ -215,10 +224,10 @@ export const MarketingWebsite: React.FC = () => {
             Commencer gratuitement
           </button>
 
-          {/* Mobile hamburger button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-slate-400 hover:text-white"
+            aria-label="Menu"
+            className="md:hidden p-2 text-slate-300 hover:text-white cursor-pointer"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -227,42 +236,26 @@ export const MarketingWebsite: React.FC = () => {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-3 text-xs">
-          <a
-            href="#hero"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-slate-300 hover:text-white"
-          >
+        <div className="md:hidden bg-[#0F213B] border-b border-white/10 p-4 space-y-2.5 text-xs sticky top-16 z-40">
+          <a href="#hero" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-200 hover:text-amber-300">
             Accueil
           </a>
-          <a
-            href="#features"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-slate-300 hover:text-white"
-          >
+          <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-200 hover:text-amber-300">
             Fonctionnalités
           </a>
-          <a
-            href="#solutions"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-slate-300 hover:text-white"
-          >
+          <a href="#solutions" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-200 hover:text-amber-300">
             Solutions
           </a>
-          <a
-            href="#pricing"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-slate-300 hover:text-white"
-          >
+          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-200 hover:text-amber-300">
             Tarifs
           </a>
-          <div className="pt-2 border-t border-slate-800 flex gap-2">
+          <div className="pt-2 border-t border-white/10 flex gap-2">
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 navigateTo('login');
               }}
-              className="flex-1 py-2 text-center bg-slate-800 text-white rounded-lg font-semibold"
+              className="flex-1 py-2.5 text-center bg-white/10 text-white rounded-lg font-semibold cursor-pointer"
             >
               Connexion
             </button>
@@ -271,7 +264,7 @@ export const MarketingWebsite: React.FC = () => {
                 setMobileMenuOpen(false);
                 navigateTo('register');
               }}
-              className="flex-1 py-2 text-center bg-amber-500 text-slate-950 rounded-lg font-bold"
+              className="flex-1 py-2.5 text-center bg-amber-500 text-slate-950 rounded-lg font-bold cursor-pointer"
             >
               Créer mon compte
             </button>
@@ -279,96 +272,111 @@ export const MarketingWebsite: React.FC = () => {
         </div>
       )}
 
-      {/* Main Flow */}
-      <main className="space-y-24 pb-20">
-        {/* B. SECTION HERO */}
-        <section id="hero" className="px-4 sm:px-6 md:px-12 pt-12 md:pt-20 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
-                <span>Logiciel SaaS de Gestion de Restaurant</span>
+      {/* Main Flow — Alternating Midnight Blue & Crisp Off-White */}
+      <main>
+        {/* B. SECTION HERO (Midnight Blue #0B192C + Editorial Luxury Photography) */}
+        <section id="hero" className="bg-[#0B192C] px-4 sm:px-6 md:px-10 pt-10 pb-16 lg:pt-16 lg:pb-24">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-stretch">
+            <div className="lg:col-span-7 flex flex-col justify-center space-y-6 text-center lg:text-left">
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-400">
+                Essai gratuit 7 jours · Sans carte bancaire · Édité par DATA WORK AGENCY
               </div>
 
-              {/* Titre officiel exigé */}
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15]">
+              <h1 className="font-serif-luxury text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.08] text-balance">
                 Gérez votre restaurant intelligemment.
               </h1>
 
-              {/* Sous-titre officiel exigé */}
               <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                RestaurantOS centralise vos opérations, vos commandes, vos stocks et vos performances pour vous aider à piloter votre établissement plus efficacement.
+                RestaurantOS centralise vos opérations, vos commandes en salle et à emporter, vos stocks, fiches recettes et performances réelles pour propulser votre établissement.
               </p>
 
-              {/* Boutons officiels exigés */}
+              {/* Dominant Primary CTA + quiet secondary controls */}
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
                 <button
                   onClick={() => navigateTo('register')}
-                  className="w-full sm:w-auto px-6 py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-6 py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
                 >
-                  <span>Commencer gratuitement</span>
+                  <span>Créer mon restaurant</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
-                <a
-                  href="#features"
-                  className="w-full sm:w-auto px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  <span>Découvrir les fonctionnalités</span>
-                </a>
-              </div>
-
-              {/* Accès Démo direct */}
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 text-xs text-slate-400">
                 <button
                   onClick={() => loginDemo()}
-                  className="text-amber-400 hover:underline flex items-center gap-1 font-medium"
+                  className="w-full sm:w-auto px-5 py-3.5 bg-white/5 hover:bg-white/10 border border-white/20 text-white font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
                 >
-                  <Store className="w-3.5 h-3.5" />
-                  <span>Tester immédiatement le restaurant de démonstration (Le Wouri Gourmet) →</span>
+                  <Store className="w-4 h-4 text-amber-400" />
+                  <span>Découvrir la démonstration</span>
+                </button>
+
+                <button
+                  onClick={() => navigateTo('login')}
+                  className="px-3 py-2 text-xs font-semibold text-slate-300 hover:text-amber-300 underline-offset-4 hover:underline transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  Se connecter
                 </button>
               </div>
+
+              {/* Concrete operational proof strip */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-white/10 text-left">
+                <div>
+                  <div className="font-mono tabular-nums text-lg font-extrabold text-amber-400">3 Espaces</div>
+                  <div className="text-[11px] text-slate-400">Admin · Pro · Client QR</div>
+                </div>
+                <div>
+                  <div className="font-mono tabular-nums text-lg font-extrabold text-white">100% Live</div>
+                  <div className="text-[11px] text-slate-400">Synchro Salle & Cuisine</div>
+                </div>
+                <div>
+                  <div className="font-mono tabular-nums text-lg font-extrabold text-white">XAF / EUR</div>
+                  <div className="text-[11px] text-slate-400">Orange Money & MoMo</div>
+                </div>
+                <div>
+                  <div className="font-mono tabular-nums text-lg font-extrabold text-emerald-400">7 Jours</div>
+                  <div className="text-[11px] text-slate-400">Essai sans engagement</div>
+                </div>
+              </div>
             </div>
 
-            {/* Visual SaaS App Mockup Presentation */}
-            <div className="lg:col-span-5">
-              <div className="bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span className="font-semibold text-slate-200">Aperçu Caisse & Salle</span>
-                  </div>
-                  <span className="text-[11px] text-amber-400 font-mono">Devise : XAF</span>
+            {/* Right Visual: Full Hospitality Photograph + Crisp POS Overlay Frame */}
+            <div className="lg:col-span-5 flex">
+              <div className="relative w-full rounded-3xl overflow-hidden border border-white/15 bg-[#10233D] shadow-2xl flex flex-col justify-between min-h-[380px]">
+                <img
+                  src="/src/assets/images/hero_restaurant_os_1792835865372.jpg"
+                  alt="RestaurantOS — Pilotage salle, caisse et expérience client"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0B192C] via-[#0B192C]/55 to-[#0B192C]/25" />
+
+                <div className="relative p-5 flex items-center justify-between text-xs">
+                  <span className="font-bold text-white bg-[#0B192C]/80 backdrop-blur-xs px-3 py-1.5 rounded-lg border border-white/15">
+                    Aperçu Caisse & Salle
+                  </span>
+                  <span className="font-mono tabular-nums text-[11px] text-amber-300 bg-[#0B192C]/80 px-2.5 py-1 rounded-lg border border-amber-400/30">
+                    Devise : XAF
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-left">
-                  <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                    <span className="text-[10px] text-slate-400 block">Commandes en cours</span>
-                    <span className="text-xl font-bold text-white">12 actives</span>
-                    <span className="text-[10px] text-emerald-400 block mt-1">Cuisine & Salle synchronisées</span>
+                <div className="relative p-5 space-y-3 mt-auto">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-[#0B192C]/85 backdrop-blur-md rounded-xl border border-white/15">
+                      <span className="text-[10px] text-slate-300 block">Commandes en cours</span>
+                      <span className="text-lg font-bold font-mono tabular-nums text-white">12 actives</span>
+                    </div>
+                    <div className="p-3 bg-[#0B192C]/85 backdrop-blur-md rounded-xl border border-white/15">
+                      <span className="text-[10px] text-slate-300 block">Tables occupées</span>
+                      <span className="text-lg font-bold font-mono tabular-nums text-amber-400">8 / 16</span>
+                    </div>
                   </div>
-                  <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                    <span className="text-[10px] text-slate-400 block">Tables occupées</span>
-                    <span className="text-xl font-bold text-amber-400">8 / 16 tables</span>
-                    <span className="text-[10px] text-slate-400 block mt-1">Plan interactif</span>
-                  </div>
-                </div>
 
-                <div className="p-3 bg-slate-900/50 rounded-xl border border-slate-800/80 text-xs text-slate-300 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                    <span>Dernières ventes</span>
-                    <span>Montant</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs py-1 border-b border-slate-800">
-                    <span>1x Bar braisé royal (Table 4)</span>
-                    <span className="font-mono text-amber-400">8 500 XAF</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs py-1 border-b border-slate-800">
-                    <span>2x Ndolé crevettes (Table 2)</span>
-                    <span className="font-mono text-amber-400">13 000 XAF</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs py-1">
-                    <span>1x Cocktail Wouri (Bar)</span>
-                    <span className="font-mono text-amber-400">3 500 XAF</span>
+                  <div className="p-3.5 bg-[#0B192C]/90 backdrop-blur-md rounded-xl border border-white/15 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between py-0.5 border-b border-white/10">
+                      <span className="text-slate-200">1x Bar braisé royal (Table 4)</span>
+                      <span className="font-mono tabular-nums font-semibold text-amber-400">8 500 XAF</span>
+                    </div>
+                    <div className="flex items-center justify-between py-0.5">
+                      <span className="text-slate-200">2x Ndolé crevettes (Table 2)</span>
+                      <span className="font-mono tabular-nums font-semibold text-amber-400">13 000 XAF</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -376,192 +384,292 @@ export const MarketingWebsite: React.FC = () => {
           </div>
         </section>
 
-        {/* C. SECTION FONCTIONNALITÉS RÉELLES */}
-        <section id="features" className="px-4 sm:px-6 md:px-12 max-w-7xl mx-auto space-y-12">
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-              Fonctionnalités Opérationnelles
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Tout ce dont votre établissement a besoin pour réussir
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-400">
-              Chaque module a été conçu pour répondre aux exigences réelles de la restauration en Afrique et à l’international.
-            </p>
-          </div>
+        {/* C. SECTION FONCTIONNALITÉS RÉELLES (Crisp #FAF9F6 Luxury Off-White Bento) */}
+        <section id="features" className="bg-[#FAF9F6] text-slate-900 py-20 px-4 sm:px-6 md:px-10">
+          <div className="max-w-7xl mx-auto space-y-12">
+            <div className="max-w-2xl space-y-3">
+              <div className="text-[11px] font-bold text-amber-700 uppercase tracking-[0.18em]">
+                Fonctionnalités Opérationnelles
+              </div>
+              <h2 className="font-serif-luxury text-3xl sm:text-4xl font-bold text-[#0B192C] tracking-tight text-balance">
+                Tout ce dont votre établissement a besoin pour réussir
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Chaque module a été conçu pour répondre aux exigences réelles de la restauration au Cameroun et à l’international.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f, i) => {
-              const Icon = f.icon;
-              return (
-                <div
-                  key={i}
-                  className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 space-y-3 hover:border-slate-700 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                    <Icon className="w-5 h-5" />
+            {/* Top Bento Highlights (2 flagship cards with varied weights) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              <div className="lg:col-span-7 bg-[#0B192C] text-white rounded-3xl p-7 sm:p-8 flex flex-col justify-between gap-6 shadow-md">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-amber-400">01 · COEUR MÉTIER</span>
+                    <ShoppingBag className="w-5 h-5 text-amber-400" />
                   </div>
-                  <h3 className="font-bold text-white text-base">{f.title}</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">{f.desc}</p>
+                  <h3 className="font-serif-luxury text-2xl font-bold text-white">
+                    Caisse POS, Salle & Écran Cuisine KDS Synchronisés
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    Prenez les commandes au comptoir, à table ou via QR Code. Chaque ticket est envoyé instantanément en cuisine avec chronomètre d’attente et encaissé en Espèces, Carte, Orange Money ou MTN MoMo.
+                  </p>
                 </div>
-              );
-            })}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 border-t border-white/10 text-xs">
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                    <div className="font-bold text-white">Ticket 80mm</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">Impression thermique</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                    <div className="font-bold text-white">KDS Live</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">Bons cuisine temps réel</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/5 border border-white/10 col-span-2 sm:col-span-1">
+                    <div className="font-bold text-white">Plan de salle</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">Occupation & QR tables</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-5 relative rounded-3xl overflow-hidden border border-slate-200 bg-white shadow-xs flex flex-col justify-between">
+                <img
+                  src="/src/assets/images/restaurant_terrace_bar_1792835866677.jpg"
+                  alt="Ambiance Lounge & Restaurant"
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-6 space-y-2.5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <span className="font-mono text-xs font-bold text-amber-700">02 · EXPÉRIENCE CLIENT</span>
+                    <h3 className="font-bold text-base text-[#0B192C] mt-1">
+                      Menus QR Code, Commande à Table & Suivi Direct
+                    </h3>
+                    <p className="text-xs text-slate-600 leading-relaxed mt-1.5">
+                      Chaque établissement dispose de sa vitrine publique avec galerie, horaires, avis vérifiés et génération de QR Codes par table sans exposer vos données internes.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigateTo('register')}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B192C] hover:text-amber-700 pt-2 cursor-pointer"
+                  >
+                    <span>Générer votre vitrine QR</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Clean Indexed Modules Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {features.map((f, i) => {
+                const Icon = f.icon;
+                return (
+                  <div
+                    key={i}
+                    className="bg-white border border-slate-200 rounded-2xl p-6 space-y-3 hover:border-amber-400/60 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200/70">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className="font-mono text-xs font-bold text-slate-400 tabular-nums">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-[#0B192C] text-sm">{f.title}</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed">{f.desc}</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
-        {/* D. SECTION AVANTAGES */}
-        <section className="px-4 sm:px-6 md:px-12 max-w-7xl mx-auto">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-8 sm:p-12 space-y-8">
-            <div className="text-center space-y-2 max-w-xl mx-auto">
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+        {/* D. SECTION AVANTAGES (Deep Midnight Blue Band) */}
+        <section className="bg-[#0B192C] text-white py-20 px-4 sm:px-6 md:px-10">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+            <div className="lg:col-span-4 space-y-3">
+              <div className="text-[11px] font-bold text-amber-400 uppercase tracking-[0.18em]">
                 Bénéfices Concrets
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              </div>
+              <h2 className="font-serif-luxury text-3xl sm:text-4xl font-bold text-white tracking-tight text-balance">
                 Pourquoi choisir RestaurantOS ?
               </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Pensé pour la réalité du service quotidien : fiabilité hors-réseau local, contrôle de caisse rigoureux et simplicité de prise en main par toute l’équipe.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
               {benefits.map((b, idx) => (
-                <div key={idx} className="space-y-2">
-                  <div className="flex items-center gap-2">
+                <div
+                  key={idx}
+                  className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-2"
+                >
+                  <div className="flex items-center gap-2.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     <h4 className="font-bold text-white text-sm">{b.title}</h4>
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed pl-6">{b.desc}</p>
+                  <p className="text-xs text-slate-300 leading-relaxed">{b.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* SOLUTIONS PAR TYPE D'ÉTABLISSEMENT */}
-        <section id="solutions" className="px-4 sm:px-6 md:px-12 max-w-7xl mx-auto space-y-8">
-          <div className="text-center space-y-2 max-w-xl mx-auto">
-            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-              Adapté à chaque concept
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Une solution pour chaque type de restaurant
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {solutions.map((s, idx) => (
-              <div
-                key={idx}
-                className="p-5 bg-slate-900/40 border border-slate-800 rounded-2xl space-y-2"
-              >
-                <h4 className="font-bold text-white text-sm">{s.name}</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">{s.desc}</p>
+        {/* SOLUTIONS PAR TYPE D'ÉTABLISSEMENT (#FAF9F6) */}
+        <section id="solutions" className="bg-[#FAF9F6] text-slate-900 py-20 px-4 sm:px-6 md:px-10">
+          <div className="max-w-7xl mx-auto space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-7 space-y-3">
+                <div className="text-[11px] font-bold text-amber-700 uppercase tracking-[0.18em]">
+                  Adapté à chaque concept
+                </div>
+                <h2 className="font-serif-luxury text-3xl sm:text-4xl font-bold text-[#0B192C] tracking-tight text-balance">
+                  Une solution pour chaque type de restaurant
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
+                  Du grill traditionnel au restaurant gastronomique ou groupe hôtelier, activez uniquement les modules utiles à votre format d’exploitation.
+                </p>
               </div>
-            ))}
+              <div className="lg:col-span-5 grid grid-cols-2 gap-3">
+                <img
+                  src="/src/assets/images/dish_grilled_fish_1792835864516.jpg"
+                  alt="Bar braisé gastronomique"
+                  className="w-full h-36 object-cover rounded-2xl border border-slate-200 shadow-xs"
+                />
+                <img
+                  src="/src/assets/images/dish_ndole_royal_1792835866049.jpg"
+                  alt="Cuisine camerounaise authentique"
+                  className="w-full h-36 object-cover rounded-2xl border border-slate-200 shadow-xs"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {solutions.map((s, idx) => (
+                <div
+                  key={idx}
+                  className="p-6 bg-white border border-slate-200 rounded-2xl space-y-2"
+                >
+                  <h4 className="font-bold text-[#0B192C] text-sm">{s.name}</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">{s.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* TARIFS RÉELS */}
-        <section id="pricing" className="px-4 sm:px-6 md:px-12 max-w-7xl mx-auto space-y-8">
-          <div className="text-center space-y-2 max-w-xl mx-auto">
-            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-              Tarification Transparente
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Des formules simples et adaptées à votre taille
-            </h2>
-            <p className="text-xs text-slate-400">
-              Facturation en Francs CFA (XAF) sans frais cachés ni engagement obligatoire.
-            </p>
-          </div>
+        {/* TARIFS RÉELS (#0B192C) */}
+        <section id="pricing" className="bg-[#0B192C] text-white py-20 px-4 sm:px-6 md:px-10">
+          <div className="max-w-7xl mx-auto space-y-10">
+            <div className="text-center space-y-2.5 max-w-xl mx-auto">
+              <div className="text-[11px] font-bold text-amber-400 uppercase tracking-[0.18em]">
+                Tarification Transparente
+              </div>
+              <h2 className="font-serif-luxury text-3xl sm:text-4xl font-bold text-white tracking-tight text-balance">
+                Des formules simples et adaptées à votre taille
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300">
+                Facturation en Francs CFA (XAF) sans frais cachés ni engagement obligatoire.
+              </p>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {INITIAL_SUBSCRIPTION_PLANS.slice(0, 3).map((plan) => (
-              <div
-                key={plan.id}
-                className={`bg-slate-900/80 rounded-2xl border p-6 flex flex-col justify-between space-y-6 ${
-                  plan.popular
-                    ? 'border-amber-400 ring-2 ring-amber-400/20 shadow-xl'
-                    : 'border-slate-800'
-                }`}
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-lg text-white">{plan.name}</h3>
-                    {plan.popular && (
-                      <span className="text-[10px] font-bold text-amber-950 bg-amber-400 px-2 py-0.5 rounded">
-                        Recommandé
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-extrabold text-white">
-                      {formatCurrency(plan.priceXAF, 'XAF')}
-                    </span>
-                    <span className="text-xs text-slate-400">/ mois</span>
-                  </div>
-                  <p className="text-xs text-slate-400">{plan.descriptionFr}</p>
-
-                  <div className="pt-4 border-t border-slate-800 space-y-2">
-                    {plan.featuresFr.map((feat, fidx) => (
-                      <div key={fidx} className="flex items-center gap-2 text-xs text-slate-300">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span>{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => navigateTo('register')}
-                  className={`w-full py-2.5 text-xs font-bold rounded-xl transition-colors cursor-pointer ${
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {activePlans.slice(0, 3).map((plan) => (
+                <div
+                  key={plan.id}
+                  className={`rounded-3xl border p-7 flex flex-col justify-between space-y-6 ${
                     plan.popular
-                      ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
-                      : 'bg-slate-800 hover:bg-slate-700 text-white'
+                      ? 'bg-[#122642] border-amber-400 ring-2 ring-amber-400/20 shadow-2xl'
+                      : 'bg-white/5 border-white/10'
                   }`}
                 >
-                  Commencer avec {plan.name}
-                </button>
-              </div>
-            ))}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-bold text-lg text-white">{plan.name}</h3>
+                      {plan.popular && (
+                        <span className="text-[10px] font-bold text-slate-950 bg-amber-400 px-2 py-0.5 rounded-md">
+                          Recommandé
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-extrabold font-mono tabular-nums text-white">
+                        {formatCurrency(plan.priceXAF, 'XAF')}
+                      </span>
+                      <span className="text-xs text-slate-400">/ mois</span>
+                    </div>
+                    <p className="text-xs text-slate-300">{plan.descriptionFr}</p>
+
+                    <div className="pt-4 border-t border-white/10 space-y-2">
+                      {plan.featuresFr.map((feat, fidx) => (
+                        <div key={fidx} className="flex items-center gap-2 text-xs text-slate-200">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <span>{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => navigateTo('register')}
+                    className={`w-full py-3 text-xs font-bold rounded-xl transition-colors cursor-pointer ${
+                      plan.popular
+                        ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                  >
+                    Commencer avec {plan.name}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* FAQ */}
-        <section id="faq" className="px-4 sm:px-6 md:px-12 max-w-4xl mx-auto space-y-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-white tracking-tight">Questions fréquentes</h2>
-          </div>
-
-          <div className="space-y-3">
-            {faqs.map((faq, idx) => (
-              <div
-                key={idx}
-                className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden"
-              >
-                <button
-                  onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                  className="w-full p-4 text-left flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-200"
-                >
-                  <span>{faq.q}</span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-slate-400 transition-transform ${
-                      activeFaq === idx ? 'rotate-180 text-amber-400' : ''
-                    }`}
-                  />
-                </button>
-                {activeFaq === idx && (
-                  <div className="px-4 pb-4 text-xs text-slate-400 leading-relaxed border-t border-slate-800/60 pt-3">
-                    {faq.a}
-                  </div>
-                )}
+        {/* FAQ (#FAF9F6) */}
+        <section id="faq" className="bg-[#FAF9F6] text-slate-900 py-20 px-4 sm:px-6 md:px-10">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <div className="text-center space-y-2">
+              <div className="text-[11px] font-bold text-amber-700 uppercase tracking-[0.18em]">
+                Réponses Directes
               </div>
-            ))}
+              <h2 className="font-serif-luxury text-3xl font-bold text-[#0B192C] tracking-tight">
+                Questions fréquentes
+              </h2>
+            </div>
+
+            <div className="space-y-3">
+              {faqs.map((faq, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs"
+                >
+                  <button
+                    onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
+                    className="w-full p-5 text-left flex items-center justify-between gap-4 text-xs sm:text-sm font-semibold text-[#0B192C] cursor-pointer"
+                  >
+                    <span>{faq.q}</span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${
+                        activeFaq === idx ? 'rotate-180 text-amber-600' : ''
+                      }`}
+                    />
+                  </button>
+                  {activeFaq === idx && (
+                    <div className="px-5 pb-5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </main>
 
       {/* E. PIED DE PAGE COMPLET */}
-      <footer className="border-t border-slate-800/80 bg-slate-950 pt-12 pb-8 px-4 sm:px-6 md:px-12 text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 pb-10 border-b border-slate-900">
+      <footer className="border-t border-white/10 bg-[#07111F] pt-12 pb-8 px-4 sm:px-6 md:px-10 text-xs text-slate-400">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 pb-10 border-b border-white/10">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-xs">
@@ -569,7 +677,7 @@ export const MarketingWebsite: React.FC = () => {
               </div>
               <span className="font-bold text-white text-sm">RestaurantOS</span>
             </div>
-            <p className="text-[11px] leading-relaxed text-slate-500">
+            <p className="text-[11px] leading-relaxed text-slate-400">
               Plateforme SaaS professionnelle de gestion de restaurants développée par DATA WORK AGENCY.
             </p>
           </div>
@@ -582,7 +690,7 @@ export const MarketingWebsite: React.FC = () => {
               <li><a href="#solutions" className="hover:text-white">Solutions</a></li>
               <li><a href="#pricing" className="hover:text-white">Tarifs</a></li>
               <li>
-                <button onClick={() => navigateTo('login')} className="hover:text-white">
+                <button onClick={() => navigateTo('login')} className="hover:text-white cursor-pointer">
                   Connexion
                 </button>
               </li>
@@ -593,17 +701,24 @@ export const MarketingWebsite: React.FC = () => {
             <h5 className="font-semibold text-white uppercase text-[11px] tracking-wider">Contact & Support</h5>
             <ul className="space-y-1.5 text-[11px]">
               <li className="flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-amber-400" />
-                <span>contact@dataworkagency.cm</span>
+                <Mail className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>{agencyEmail}</span>
               </li>
               <li className="flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-amber-400" />
-                <span>+237 699 45 88 12 (Douala, Cameroun)</span>
+                <Phone className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="tabular-nums">{agencyPhone} (Douala / Yaoundé)</span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <Instagram className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>Instagram : {agencyInstagram}</span>
               </li>
               <li>
                 <button
-                  onClick={() => setModalType('contact')}
-                  className="text-amber-400 hover:underline"
+                  onClick={() => {
+                    setContactSubmitted(false);
+                    setModalType('contact');
+                  }}
+                  className="text-amber-400 hover:underline cursor-pointer"
                 >
                   Demander une assistance dédiée
                 </button>
@@ -615,24 +730,24 @@ export const MarketingWebsite: React.FC = () => {
             <h5 className="font-semibold text-white uppercase text-[11px] tracking-wider">Informations</h5>
             <ul className="space-y-1.5 text-[11px]">
               <li>
-                <button onClick={() => setModalType('terms')} className="hover:text-white">
+                <button onClick={() => setModalType('terms')} className="hover:text-white cursor-pointer">
                   Mentions légales
                 </button>
               </li>
               <li>
-                <button onClick={() => setModalType('privacy')} className="hover:text-white">
+                <button onClick={() => setModalType('privacy')} className="hover:text-white cursor-pointer">
                   Politique de confidentialité
                 </button>
               </li>
-              <li>Version : v2.4 Multi-Tenants</li>
+              <li>Version : v2.5 Multi-Tenants</li>
             </ul>
           </div>
         </div>
 
         {/* Required Attribution Signature */}
-        <div className="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-slate-500 text-[11px]">
+        <div className="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-slate-400 text-[11px]">
           <div>
-            RestaurantOS — Une solution développée par <strong className="text-slate-300">DATA WORK AGENCY</strong>
+            RestaurantOS — Une solution développée par <strong className="text-slate-200">DATA WORK AGENCY</strong>
           </div>
           <div>
             © {new Date().getFullYear()} DATA WORK AGENCY. Tous droits réservés.
@@ -642,15 +757,15 @@ export const MarketingWebsite: React.FC = () => {
 
       {/* Simple Modals for Contact, Terms & Privacy */}
       {modalType && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-xs space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#0F213B] border border-white/15 rounded-2xl max-w-md w-full p-6 text-xs space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <h4 className="font-bold text-white text-sm">
                 {modalType === 'contact' && 'Contacter DATA WORK AGENCY'}
                 {modalType === 'terms' && 'Mentions Légales'}
                 {modalType === 'privacy' && 'Politique de Confidentialité'}
               </h4>
-              <button onClick={() => setModalType(null)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setModalType(null)} className="text-slate-400 hover:text-white cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -660,11 +775,106 @@ export const MarketingWebsite: React.FC = () => {
                 <p className="text-slate-300 leading-relaxed">
                   L’équipe d’ingénieurs et de support DATA WORK AGENCY est à votre écoute pour déployer RestaurantOS dans vos établissements.
                 </p>
-                <div className="p-3 bg-slate-950 rounded-xl space-y-1 border border-slate-800 text-[11px]">
-                  <div><strong>Email :</strong> contact@dataworkagency.cm</div>
-                  <div><strong>Téléphone :</strong> +237 699 45 88 12</div>
-                  <div><strong>Siège :</strong> Douala / Yaoundé, Cameroun</div>
+                <div className="p-3 bg-[#0B192C] rounded-xl space-y-1.5 border border-white/10 text-[11px] text-slate-200">
+                  <div><strong>Email :</strong> {agencyEmail}</div>
+                  <div><strong>Téléphone :</strong> {agencyPhone}</div>
+                  <div><strong>Instagram :</strong> {agencyInstagram}</div>
+                  <div><strong>Éditeur :</strong> DATA WORK AGENCY (Cameroun & International)</div>
                 </div>
+
+                {contactSubmitted ? (
+                  <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-200 space-y-1 text-xs">
+                    <div className="font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <span>Demande transmise à DATA WORK AGENCY</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-100/90">
+                      Votre ticket est enregistré dans notre console support. Notre équipe vous contactera rapidement par téléphone ou e-mail.
+                    </p>
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!supportForm.requesterName.trim() || !supportForm.requesterEmail.trim() || !supportForm.message.trim()) return;
+                      submitSupportTicket({
+                        requesterName: supportForm.requesterName.trim(),
+                        restaurantName: supportForm.restaurantName.trim() || 'Nouveau Prospect',
+                        requesterEmail: supportForm.requesterEmail.trim(),
+                        requesterPhone: supportForm.requesterPhone.trim(),
+                        subject: supportForm.subject.trim() || 'Assistance RestaurantOS',
+                        message: supportForm.message.trim(),
+                        priority: 'normal',
+                      });
+                      setContactSubmitted(true);
+                      setSupportForm({
+                        requesterName: '',
+                        restaurantName: '',
+                        requesterEmail: '',
+                        requesterPhone: '',
+                        subject: 'Demande de démonstration / déploiement',
+                        message: '',
+                      });
+                    }}
+                    className="space-y-2.5 pt-1"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        required
+                        placeholder="Votre nom *"
+                        value={supportForm.requesterName}
+                        onChange={(e) => setSupportForm({ ...supportForm, requesterName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg bg-[#0B192C] border border-white/15 text-white placeholder:text-slate-400 text-xs focus:outline-none focus:border-amber-400"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Nom du restaurant"
+                        value={supportForm.restaurantName}
+                        onChange={(e) => setSupportForm({ ...supportForm, restaurantName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg bg-[#0B192C] border border-white/15 text-white placeholder:text-slate-400 text-xs focus:outline-none focus:border-amber-400"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input
+                        type="email"
+                        required
+                        placeholder="Email professionnel *"
+                        value={supportForm.requesterEmail}
+                        onChange={(e) => setSupportForm({ ...supportForm, requesterEmail: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg bg-[#0B192C] border border-white/15 text-white placeholder:text-slate-400 text-xs focus:outline-none focus:border-amber-400"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Téléphone (+237...)"
+                        value={supportForm.requesterPhone}
+                        onChange={(e) => setSupportForm({ ...supportForm, requesterPhone: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg bg-[#0B192C] border border-white/15 text-white placeholder:text-slate-400 text-xs focus:outline-none focus:border-amber-400"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Objet de votre demande"
+                      value={supportForm.subject}
+                      onChange={(e) => setSupportForm({ ...supportForm, subject: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg bg-[#0B192C] border border-white/15 text-white placeholder:text-slate-400 text-xs focus:outline-none focus:border-amber-400"
+                    />
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="Décrivez votre besoin (nombre d'établissements, caisse POS, menu QR, formation...)"
+                      value={supportForm.message}
+                      onChange={(e) => setSupportForm({ ...supportForm, message: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg bg-[#0B192C] border border-white/15 text-white placeholder:text-slate-400 text-xs focus:outline-none focus:border-amber-400"
+                    />
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                    >
+                      Envoyer la demande à DATA WORK AGENCY
+                    </button>
+                  </form>
+                )}
               </div>
             )}
 
@@ -685,7 +895,7 @@ export const MarketingWebsite: React.FC = () => {
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setModalType(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold"
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold cursor-pointer"
               >
                 Fermer
               </button>

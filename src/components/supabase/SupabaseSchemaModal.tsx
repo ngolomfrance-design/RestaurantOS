@@ -227,54 +227,54 @@ CREATE POLICY "Tenant Isolation: Tables" ON tables
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
               Architecture Supabase & PostgreSQL RLS
             </h1>
-            <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">
+            <span className="text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded">
               Spécification Technique Officielle
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Schéma relationnel complet, Row Level Security (RLS) multi-tenant et guide de raccordement
           </p>
         </div>
 
         <button
           onClick={copyToClipboard}
-          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-xs transition-colors self-start sm:self-auto"
+          className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#0B192C] hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-400 dark:text-slate-950 rounded-lg shadow-xs transition-colors self-start sm:self-auto cursor-pointer"
         >
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 dark:text-slate-950" /> : <Copy className="w-3.5 h-3.5" />}
           <span>{copied ? 'Script SQL copié !' : 'Copier le script SQL DDL'}</span>
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center p-1 bg-slate-100 rounded-lg text-xs font-medium w-fit">
+      <div className="flex items-center p-1 bg-slate-200/70 dark:bg-slate-800/80 rounded-xl text-xs font-medium w-fit overflow-x-auto max-w-full">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`px-3 py-1.5 rounded-md transition-colors ${
-            activeTab === 'overview' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-600'
+          className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
+            activeTab === 'overview' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs font-semibold' : 'text-slate-600 dark:text-slate-400'
           }`}
         >
           Vue d’ensemble & RLS
         </button>
         <button
           onClick={() => setActiveTab('schema')}
-          className={`px-3 py-1.5 rounded-md transition-colors ${
-            activeTab === 'schema' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-600'
+          className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
+            activeTab === 'schema' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs font-semibold' : 'text-slate-600 dark:text-slate-400'
           }`}
         >
           Script SQL PostgreSQL (27 tables)
         </button>
         <button
           onClick={() => setActiveTab('guide')}
-          className={`px-3 py-1.5 rounded-md transition-colors ${
-            activeTab === 'guide' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-600'
+          className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
+            activeTab === 'guide' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs font-semibold' : 'text-slate-600 dark:text-slate-400'
           }`}
         >
           Guide de Connexion Supabase
@@ -285,42 +285,42 @@ CREATE POLICY "Tenant Isolation: Tables" ON tables
       {activeTab === 'overview' && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-2">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
                 <ShieldCheck className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900">Isolation Multi-Tenant Stricte</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Chaque table contient une clé étrangère <code className="font-mono bg-slate-100 px-1 py-0.5 rounded">organization_id</code>. Les politiques PostgreSQL RLS interdisent formellement à un restaurant d'accéder aux données d'un autre établissement.
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Isolation Multi-Tenant Stricte</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Chaque table contient une clé étrangère <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">organization_id</code>. Les politiques PostgreSQL RLS interdisent formellement à un restaurant d'accéder aux données d'un autre établissement.
               </p>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-2">
+              <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold">
                 <Lock className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900">Sécurité & Privilèges Serveur</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Sécurité & Privilèges Serveur</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Les clés API secrètes (Service Role & Gemini) ne sont jamais exposées au navigateur. Les transactions financières et l'intelligence artificielle transitent par des routes backend sécurisées.
               </p>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-2">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold">
                 <Server className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-sm text-slate-900">Architecture Modulaire Évolutive</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Architecture Modulaire Évolutive</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Développé par DATA WORK AGENCY pour soutenir l'expansion du marché camerounais (XAF) vers l'Afrique centrale, l'Europe et l'international avec gestion multi-devises et multi-sites.
               </p>
             </div>
           </div>
 
-          <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 flex items-start gap-3">
-            <Key className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+          <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3">
+            <Key className="w-5 h-5 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold block">Statut Actuel de l'Environnement</span>
-              <p className="mt-0.5 text-amber-800 leading-relaxed">
+              <p className="mt-0.5 text-amber-800 dark:text-amber-300/90 leading-relaxed">
                 L'application fonctionne actuellement avec une couche de persistance locale isolée par tenant (LocalStorage & Mock State) permettant une exécution immédiate sans configuration préalable. Pour brancher votre instance Cloud Supabase de production, suivez les étapes du guide ci-dessous.
               </p>
             </div>
@@ -335,7 +335,7 @@ CREATE POLICY "Tenant Isolation: Tables" ON tables
             <span className="font-mono text-slate-400">schema_restaurantos_v1.sql</span>
             <button
               onClick={copyToClipboard}
-              className="text-amber-400 hover:text-amber-300 font-semibold"
+              className="text-amber-400 hover:text-amber-300 font-semibold cursor-pointer"
             >
               {copied ? 'Copié !' : 'Copier tout le SQL'}
             </button>
@@ -348,21 +348,21 @@ CREATE POLICY "Tenant Isolation: Tables" ON tables
 
       {/* TAB 3: Guide */}
       {activeTab === 'guide' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4 text-xs text-slate-700">
-          <h2 className="font-bold text-sm text-slate-900">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-4 text-xs text-slate-700 dark:text-slate-300">
+          <h2 className="font-bold text-sm text-slate-900 dark:text-white">
             Étapes de Déploiement vers Supabase Production
           </h2>
 
           <ol className="list-decimal list-inside space-y-3 leading-relaxed">
             <li>
-              <strong>Créer un projet Supabase</strong> : Rendez-vous sur <code className="bg-slate-100 px-1 py-0.5 rounded">supabase.com</code> et créez un nouveau projet (région Frankfurt ou Paris pour l'Afrique/Europe).
+              <strong>Créer un projet Supabase</strong> : Rendez-vous sur <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">supabase.com</code> et créez un nouveau projet (région Frankfurt ou Paris pour l'Afrique/Europe).
             </li>
             <li>
               <strong>Exécuter le script SQL</strong> : Ouvrez le <em>SQL Editor</em> dans votre console Supabase, collez le script DDL fourni dans l'onglet "Script SQL", puis cliquez sur <em>Run</em>.
             </li>
             <li>
-              <strong>Renseigner les variables d'environnement</strong> : Ajoutez dans votre fichier <code className="bg-slate-100 px-1 py-0.5 rounded">.env</code> :
-              <pre className="bg-slate-900 text-slate-200 p-3 rounded-lg font-mono text-[11px] mt-1.5">
+              <strong>Renseigner les variables d'environnement</strong> : Ajoutez dans votre fichier <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">.env</code> :
+              <pre className="bg-slate-900 text-slate-200 p-3 rounded-lg font-mono text-[11px] mt-1.5 overflow-x-auto">
 VITE_SUPABASE_URL="https://votre-projet.supabase.co"&#10;VITE_SUPABASE_ANON_KEY="votre-anon-key-publique"&#10;SUPABASE_SERVICE_ROLE_KEY="votre-cle-service-serveur"
               </pre>
             </li>

@@ -23,16 +23,37 @@ import {
 
 export const QuickActionsMenu: React.FC = () => {
   const {
-    state,
     language,
     currentUser,
+    activeOrganization,
+    scopedTables,
     setActiveView,
     addAuditLog,
     createReservation,
-    addInventoryMovement,
-    updateTableStatus,
   } = useRestaurant();
   const t = useTranslation(language);
+
+  const orgStaffList = React.useMemo(() => {
+    const filtered = INITIAL_PROFILES.filter(
+      (p) => p.orgId === activeOrganization.id || p.organizationIds?.includes(activeOrganization.id)
+    );
+    const hasCurrent = filtered.some((p) => p.id === currentUser.id || p.email === currentUser.email);
+    return hasCurrent
+      ? filtered
+      : [
+          {
+            id: currentUser.id,
+            orgId: activeOrganization.id,
+            name: currentUser.name,
+            email: currentUser.email,
+            role: currentUser.role,
+            phone: currentUser.phone,
+            pinCode: currentUser.pinCode,
+            isActive: true,
+          },
+          ...filtered,
+        ];
+  }, [activeOrganization.id, currentUser]);
 
   const [isOpen, setIsOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -42,7 +63,7 @@ export const QuickActionsMenu: React.FC = () => {
   const [cashDrawerReason, setCashDrawerReason] = useState('Monnaie pour client');
 
   const [showClockInModal, setShowClockInModal] = useState(false);
-  const [selectedStaffId, setSelectedStaffId] = useState(currentUser.id || INITIAL_PROFILES[0].id);
+  const [selectedStaffId, setSelectedStaffId] = useState(currentUser.id || orgStaffList[0]?.id || '');
   const [enteredPin, setEnteredPin] = useState('');
   const [clockType, setClockType] = useState<'in' | 'out'>('in');
   const [clockError, setClockError] = useState('');
@@ -117,7 +138,7 @@ export const QuickActionsMenu: React.FC = () => {
   // 2. Action: Clock In / Clock Out Staff
   const handleClockStaff = (e: React.FormEvent) => {
     e.preventDefault();
-    const staff = INITIAL_PROFILES.find((p) => p.id === selectedStaffId) || currentUser;
+    const staff = orgStaffList.find((p) => p.id === selectedStaffId) || currentUser;
 
     if (staff.pinCode && enteredPin !== staff.pinCode) {
       setClockError(
@@ -157,7 +178,7 @@ export const QuickActionsMenu: React.FC = () => {
       time: resTime,
       area: 'Salle Principale',
       tableId: resTableId || undefined,
-      tableName: resTableId ? state.tables.find((t) => t.id === resTableId)?.name : undefined,
+      tableName: resTableId ? scopedTables.find((t) => t.id === resTableId)?.name : undefined,
       status: 'confirmed',
       notes: 'Réservation express créée depuis les Actions Rapides',
     });
@@ -338,17 +359,17 @@ export const QuickActionsMenu: React.FC = () => {
         {/* Floating Trigger Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center gap-2.5 px-4 py-3 rounded-full font-bold text-xs shadow-2xl transition-all duration-200 border ${
+          className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-2xl transition-all duration-200 border cursor-pointer ${
             isOpen
               ? 'bg-slate-900 text-white border-amber-500 scale-105'
               : 'bg-[#0B192C] text-amber-400 border-amber-500/40 hover:border-amber-400 hover:bg-slate-900 hover:scale-105'
           }`}
           title="Actions Rapides selon votre rôle"
         >
-          <div className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
+          <div className="w-5 h-5 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
             <Zap className="w-3 h-3" />
           </div>
-          <span className="font-semibold text-white">
+          <span className="font-semibold text-white whitespace-nowrap">
             {language === 'fr' ? 'Actions Rapides' : 'Quick Actions'}
           </span>
           <ChevronUp
@@ -362,23 +383,23 @@ export const QuickActionsMenu: React.FC = () => {
       {/* MODAL 1: Open Cash Drawer Confirmation */}
       {showCashDrawerModal && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <KeyRound className="w-4 h-4 text-amber-600" />
-                <h3 className="font-bold text-sm text-slate-900">
+                <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                   {language === 'fr' ? 'Ouverture manuelle du tiroir' : 'Open Cash Drawer'}
                 </h3>
               </div>
               <button
                 onClick={() => setShowCashDrawerModal(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200">
               <p className="font-medium">
                 {language === 'fr'
                   ? 'Cette opération physique est journalisée dans l’audit de sécurité de la caisse.'
@@ -387,11 +408,11 @@ export const QuickActionsMenu: React.FC = () => {
             </div>
 
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-slate-700 block">Motif de l’ouverture :</label>
+              <label className="font-semibold text-slate-700 dark:text-slate-300 block">Motif de l’ouverture :</label>
               <select
                 value={cashDrawerReason}
                 onChange={(e) => setCashDrawerReason(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-amber-500"
+                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
               >
                 <option value="Monnaie pour client">Appoint de monnaie pour client</option>
                 <option value="Comptage fond de caisse">Comptage de fond de caisse</option>
@@ -404,16 +425,16 @@ export const QuickActionsMenu: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCashDrawerModal(false)}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
+                className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition-colors"
               >
                 Annuler
               </button>
               <button
                 type="button"
                 onClick={handleOpenCashDrawer}
-                className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-400 text-white dark:text-slate-950 font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5"
               >
-                <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                <KeyRound className="w-3.5 h-3.5 text-amber-400 dark:text-slate-950" />
                 <span>Déclencher l'ouverture</span>
               </button>
             </div>
@@ -424,17 +445,17 @@ export const QuickActionsMenu: React.FC = () => {
       {/* MODAL 2: Clock In / Clock Out Staff */}
       {showClockInModal && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-emerald-600" />
-                <h3 className="font-bold text-sm text-slate-900">
+                <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                   {language === 'fr' ? 'Pointage du Personnel' : 'Staff Clock-In Terminal'}
                 </h3>
               </div>
               <button
                 onClick={() => setShowClockInModal(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -442,16 +463,16 @@ export const QuickActionsMenu: React.FC = () => {
 
             <form onSubmit={handleClockStaff} className="space-y-3.5 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Employé :</label>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Employé :</label>
                 <select
                   value={selectedStaffId}
                   onChange={(e) => {
                     setSelectedStaffId(e.target.value);
                     setClockError('');
                   }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-amber-500 font-medium"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 font-medium"
                 >
-                  {INITIAL_PROFILES.map((p) => (
+                  {orgStaffList.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} ({p.role.toUpperCase()})
                     </option>
@@ -460,15 +481,15 @@ export const QuickActionsMenu: React.FC = () => {
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Type de pointage :</label>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Type de pointage :</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setClockType('in')}
                     className={`py-2 rounded-lg font-semibold border transition-colors ${
                       clockType === 'in'
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     Prise de poste
@@ -478,8 +499,8 @@ export const QuickActionsMenu: React.FC = () => {
                     onClick={() => setClockType('out')}
                     className={`py-2 rounded-lg font-semibold border transition-colors ${
                       clockType === 'out'
-                        ? 'border-rose-500 bg-rose-50 text-rose-800'
-                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     Fin de service
@@ -488,15 +509,15 @@ export const QuickActionsMenu: React.FC = () => {
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Code PIN collaborateur :</label>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Code PIN collaborateur :</label>
                 <input
                   type="password"
                   maxLength={6}
                   required
-                  placeholder="Code PIN à 4 chiffres (ex: 1234, 3333)"
+                  placeholder="Code PIN à 4 chiffres"
                   value={enteredPin}
                   onChange={(e) => setEnteredPin(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg font-mono tracking-widest text-center text-sm focus:outline-none focus:border-amber-500"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg font-mono tracking-widest text-center text-sm focus:outline-none focus:border-amber-500"
                 />
                 <span className="text-[10px] text-slate-400 mt-1 block">
                   Chaque membre d'équipe dispose d'un code PIN sécurisé.
@@ -504,7 +525,7 @@ export const QuickActionsMenu: React.FC = () => {
               </div>
 
               {clockError && (
-                <div className="p-2 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-[11px] font-semibold">
+                <div className="p-2 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 rounded-lg text-rose-700 dark:text-rose-300 text-[11px] font-semibold">
                   {clockError}
                 </div>
               )}
@@ -513,13 +534,13 @@ export const QuickActionsMenu: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowClockInModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors"
+                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-xs transition-colors"
+                  className="flex-1 py-2.5 bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-400 text-white dark:text-slate-950 font-bold rounded-xl shadow-xs transition-colors"
                 >
                   Enregistrer pointage
                 </button>
@@ -532,17 +553,17 @@ export const QuickActionsMenu: React.FC = () => {
       {/* MODAL 3: Quick Reservation */}
       {showQuickReservationModal && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <CalendarPlus className="w-4 h-4 text-blue-600" />
-                <h3 className="font-bold text-sm text-slate-900">
+                <CalendarPlus className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                   {language === 'fr' ? 'Réservation Express' : 'Quick Reservation'}
                 </h3>
               </div>
               <button
                 onClick={() => setShowQuickReservationModal(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -550,59 +571,59 @@ export const QuickActionsMenu: React.FC = () => {
 
             <form onSubmit={handleCreateQuickReservation} className="space-y-3 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Nom du client *</label>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Nom du client *</label>
                 <input
                   type="text"
                   required
                   placeholder="Ex: M. Fabrice Noah"
                   value={resName}
                   onChange={(e) => setResName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-amber-500"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Téléphone</label>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Téléphone</label>
                   <input
                     type="tel"
                     value={resPhone}
                     onChange={(e) => setResPhone(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg font-mono focus:outline-none focus:border-amber-500"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg font-mono focus:outline-none focus:border-amber-500"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Couverts</label>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Couverts</label>
                   <input
                     type="number"
                     min="1"
                     max="20"
                     value={resGuests}
                     onChange={(e) => setResGuests(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg font-mono focus:outline-none focus:border-amber-500"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg font-mono focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Heure de service</label>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Heure de service</label>
                   <input
                     type="time"
                     value={resTime}
                     onChange={(e) => setResTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg font-mono focus:outline-none focus:border-amber-500"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg font-mono focus:outline-none focus:border-amber-500"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Table assignée</label>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Table assignée</label>
                   <select
                     value={resTableId}
                     onChange={(e) => setResTableId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-white focus:outline-none focus:border-amber-500"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
                   >
                     <option value="">Sélection auto</option>
-                    {state.tables.map((t) => (
+                    {scopedTables.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.name} ({t.capacity}p)
                       </option>
@@ -615,13 +636,13 @@ export const QuickActionsMenu: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowQuickReservationModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors"
+                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-xs transition-colors"
+                  className="flex-1 py-2.5 bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-400 text-white dark:text-slate-950 font-bold rounded-xl shadow-xs transition-colors"
                 >
                   Bloquer la table
                 </button>

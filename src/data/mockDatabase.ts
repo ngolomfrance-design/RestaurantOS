@@ -15,6 +15,13 @@ import {
   AuditLog,
   BillingTransaction,
   StaffInvitation,
+  CustomerReview,
+  InternalStaffNote,
+  StaffShift,
+  DailyZReport,
+  ExpenseRecord,
+  SupportTicket,
+  PlatformSettings,
 } from '../types/restaurant';
 
 export const INITIAL_BILLING_TRANSACTIONS: BillingTransaction[] = [
@@ -149,8 +156,32 @@ export const INITIAL_ORGANIZATION: Organization = {
   paymentStatus: 'paid',
   billingPeriod: 'monthly',
   openingHours: 'Lun - Dim: 11h00 - 23h30',
+  businessHoursSchedule: [
+    { day: 'Lundi', open: '11:00', close: '23:30', isClosed: false },
+    { day: 'Mardi', open: '11:00', close: '23:30', isClosed: false },
+    { day: 'Mercredi', open: '11:00', close: '23:30', isClosed: false },
+    { day: 'Jeudi', open: '11:00', close: '23:30', isClosed: false },
+    { day: 'Vendredi', open: '11:00', close: '01:00', isClosed: false },
+    { day: 'Samedi', open: '11:00', close: '02:00', isClosed: false },
+    { day: 'Dimanche', open: '12:00', close: '23:00', isClosed: false },
+  ],
   description: 'Restaurant gastronomique, braiserie contemporaine et lounge au cœur de Bonapriso, Douala.',
   coverImage: '/src/assets/images/restaurant_terrace_bar_1792835866677.jpg',
+  gallery: [
+    '/src/assets/images/restaurant_terrace_bar_1792835866677.jpg',
+    '/src/assets/images/hero_restaurant_os_1792835865372.jpg',
+    '/src/assets/images/dish_ndole_royal_1792835866049.jpg',
+    '/src/assets/images/dish_grilled_fish_1792835864516.jpg',
+  ],
+  socialLinks: {
+    whatsapp: '+237699458812',
+    phone: '+237 699 45 88 12',
+    facebook: 'https://facebook.com/lewourigourmet',
+    instagram: 'lewourigourmet',
+    tiktok: '@lewourigourmet',
+    googleMaps: 'https://maps.google.com/?q=Bonapriso+Douala+Le+Wouri+Gourmet',
+    website: 'https://lewourigourmet.cm',
+  },
   taxRate: 19.25,
   enableOnlineOrdering: true,
   enableTableOrdering: true,
@@ -894,6 +925,268 @@ export const INITIAL_AUDIT_LOGS: AuditLog[] = [
   },
 ];
 
+export const INITIAL_REVIEWS: CustomerReview[] = [
+  {
+    id: 'rev_01',
+    orgId: 'org_wouri_01',
+    orderId: 'ord_completed_01',
+    orderNumber: 'CMD-2398',
+    isVerifiedOrder: true,
+    customerName: 'Marc Essomba',
+    customerEmail: 'marc.essomba@camnet.cm',
+    customerPhone: '+237 699 12 34 56',
+    rating: 5,
+    comment: 'Le Ndolé Royal aux Gambas est tout simplement exceptionnel. Cuisson parfaite et service attentionné en terrasse. Je reviendrai sans hésiter.',
+    status: 'published',
+    createdAt: '2026-10-24T21:15:00Z',
+    reply: {
+      text: 'Merci infiniment M. Essomba ! Toute la brigade du chef est ravie que vous ayez apprécié notre Ndolé signature.',
+      authorName: 'Samuel Ebanda (Direction)',
+      repliedAt: '2026-10-25T08:30:00Z',
+    },
+  },
+  {
+    id: 'rev_02',
+    orgId: 'org_wouri_01',
+    orderId: 'ord_completed_02',
+    orderNumber: 'CMD-2397',
+    isVerifiedOrder: true,
+    customerName: 'Cécile Tchouangue',
+    customerEmail: 'c.tchouangue@gmail.com',
+    customerPhone: '+237 677 88 99 00',
+    rating: 5,
+    comment: 'Bar braisé délicieux et cocktail au bissap très rafraîchissant. Cadre feutré idéal pour un dîner d’affaires.',
+    status: 'published',
+    createdAt: '2026-10-23T20:45:00Z',
+  },
+  {
+    id: 'rev_03',
+    orgId: 'org_wouri_01',
+    isVerifiedOrder: false,
+    customerName: 'Alain Mvondo',
+    rating: 4,
+    comment: 'Très belle ambiance et carte des vins soignée. Un petit délai d’attente sur les desserts compensé par le sourire de l’équipe.',
+    status: 'published',
+    createdAt: '2026-10-22T19:30:00Z',
+  },
+];
+
+export const INITIAL_INTERNAL_NOTES: InternalStaffNote[] = [
+  {
+    id: 'note_01',
+    orgId: 'org_wouri_01',
+    authorName: 'Samuel Ebanda',
+    authorRole: 'owner',
+    title: 'Protocole Clôture de Caisse & Rapprochement Mobile Money',
+    content: 'Pensez à bien exporter le journal MoMo avant 23h30 pour vérifier que chaque paiement avec référence concorde avec le rapport Z RestaurantOS.',
+    urgency: 'high',
+    pinned: true,
+    createdAt: '2026-10-24T10:00:00Z',
+  },
+  {
+    id: 'note_02',
+    orgId: 'org_wouri_01',
+    authorName: 'Nadine Mballa',
+    authorRole: 'manager',
+    title: 'Service du soir : Table VIP 1 réservée (Délégation MTN)',
+    content: 'Client récurrent. Proposer en apéritif le Cocktail Signature Bissap Royal bien frais. Facturation société demandée.',
+    urgency: 'medium',
+    pinned: true,
+    createdAt: '2026-10-25T16:00:00Z',
+  },
+  {
+    id: 'note_03',
+    orgId: 'org_wouri_01',
+    authorName: 'Astrid NGO',
+    authorRole: 'server',
+    title: 'Rupture temporaire Maracuja frais',
+    content: 'Plus de fruits de la passion pour le dessert maracuja jusqu’au réassort de demain matin 8h.',
+    urgency: 'low',
+    pinned: false,
+    createdAt: '2026-10-25T18:20:00Z',
+  },
+];
+
+export const INITIAL_STAFF_SHIFTS: StaffShift[] = [
+  {
+    id: 'shift_01',
+    orgId: 'org_wouri_01',
+    userId: 'usr_server_01',
+    userName: 'Astrid NGO',
+    userRole: 'server',
+    clockIn: '2026-10-26T10:45:00Z',
+    date: '2026-10-26',
+    status: 'active',
+    notes: 'Prise de poste service midi & terrasse',
+  },
+  {
+    id: 'shift_02',
+    orgId: 'org_wouri_01',
+    userId: 'usr_cashier_01',
+    userName: 'Christian Kamdem',
+    userRole: 'cashier',
+    clockIn: '2026-10-26T10:30:00Z',
+    date: '2026-10-26',
+    status: 'active',
+    notes: 'Ouverture du tiroir-caisse avec fond de 50 000 XAF',
+  },
+  {
+    id: 'shift_03',
+    orgId: 'org_wouri_01',
+    userId: 'usr_kitchen_01',
+    userName: 'Chef Jean-Paul Mbarga',
+    userRole: 'kitchen',
+    clockIn: '2026-10-26T09:30:00Z',
+    date: '2026-10-26',
+    status: 'active',
+    notes: 'Mise en place chaud et préparations braiserie',
+  },
+  {
+    id: 'shift_04',
+    orgId: 'org_wouri_01',
+    userId: 'usr_server_01',
+    userName: 'Astrid NGO',
+    userRole: 'server',
+    clockIn: '2026-10-25T11:00:00Z',
+    clockOut: '2026-10-25T23:45:00Z',
+    date: '2026-10-25',
+    totalMinutes: 765,
+    status: 'completed',
+    notes: 'Service complet clôturé',
+  },
+  {
+    id: 'shift_05',
+    orgId: 'org_wouri_01',
+    userId: 'usr_cashier_01',
+    userName: 'Christian Kamdem',
+    userRole: 'cashier',
+    clockIn: '2026-10-25T10:45:00Z',
+    clockOut: '2026-10-25T23:55:00Z',
+    date: '2026-10-25',
+    totalMinutes: 790,
+    status: 'completed',
+    notes: 'Clôture caisse validée par la direction',
+  },
+];
+
+export const INITIAL_DAILY_Z_REPORTS: DailyZReport[] = [
+  {
+    id: 'zrep_20261025',
+    orgId: 'org_wouri_01',
+    reportDate: '2026-10-25',
+    openingTime: '10:45',
+    closingTime: '23:55',
+    closedBy: 'Christian Kamdem (Caissier Principal)',
+    grossRevenue: 485000,
+    discountsTotal: 12000,
+    refundsTotal: 0,
+    netRevenue: 473000,
+    taxTotal: 76150,
+    totalOrders: 28,
+    completedOrders: 27,
+    cancelledOrders: 1,
+    averageOrderValue: 17518,
+    paymentBreakdown: {
+      cash: 185000,
+      card: 140000,
+      mobile_money: 148000,
+    },
+    categoryBreakdown: [
+      { categoryId: 'cat_plats_poissons', categoryName: 'Poissons & Braises', revenue: 215000, quantity: 18 },
+      { categoryId: 'cat_plats_viandes', categoryName: 'Viandes & Gibiers', revenue: 145000, quantity: 14 },
+      { categoryId: 'cat_boissons', categoryName: 'Boissons & Cocktails', revenue: 78000, quantity: 22 },
+      { categoryId: 'cat_desserts', categoryName: 'Desserts Maison', revenue: 35000, quantity: 8 },
+    ],
+    hourlyHeatmap: [
+      { hour: 11, orderCount: 1, revenue: 12000 },
+      { hour: 12, orderCount: 5, revenue: 85000 },
+      { hour: 13, orderCount: 6, revenue: 98000 },
+      { hour: 14, orderCount: 2, revenue: 24000 },
+      { hour: 18, orderCount: 2, revenue: 31000 },
+      { hour: 19, orderCount: 4, revenue: 68000 },
+      { hour: 20, orderCount: 5, revenue: 105000 },
+      { hour: 21, orderCount: 3, revenue: 50000 },
+    ],
+    topDishesByQuantity: [
+      { productId: 'prod_grilled_fish', productName: 'Bar de Mer Braisé à l’Ancienne', quantity: 11, revenue: 154000 },
+      { productId: 'prod_poulet_dg', productName: 'Poulet DG Signature', quantity: 9, revenue: 85500 },
+      { productId: 'prod_cocktail_hibiscus', productName: 'Cocktail Signature Bissap Royal', quantity: 14, revenue: 63000 },
+    ],
+    topDishesByRevenue: [
+      { productId: 'prod_grilled_fish', productName: 'Bar de Mer Braisé à l’Ancienne', quantity: 11, revenue: 154000 },
+      { productId: 'prod_ndole', productName: 'Ndolé Royal aux Gambas', quantity: 7, revenue: 87500 },
+      { productId: 'prod_poulet_dg', productName: 'Poulet DG Signature', quantity: 9, revenue: 85500 },
+    ],
+    staffAttendance: [
+      { staffName: 'Christian Kamdem', role: 'Caissier Principal', clockIn: '10:45', clockOut: '23:55', durationHours: 13.1 },
+      { staffName: 'Astrid NGO', role: 'Chef de Rang', clockIn: '11:00', clockOut: '23:45', durationHours: 12.7 },
+      { staffName: 'Chef Jean-Paul Mbarga', role: 'Chef de Cuisine', clockIn: '09:30', clockOut: '23:30', durationHours: 14.0 },
+    ],
+    cashDrawerStarting: 50000,
+    cashDrawerActual: 235000,
+    cashDiscrepancy: 0,
+    notes: 'Excellente affluence pour le service du dîner. Écart de caisse nul, validation intégrale.',
+    createdAt: '2026-10-25T23:58:00Z',
+  },
+];
+
+export const INITIAL_EXPENSES: ExpenseRecord[] = [
+  {
+    id: 'exp_01',
+    orgId: 'org_wouri_01',
+    title: 'Approvisionnement Pêcheries Youpwé (Bar & Gambas)',
+    category: 'inventory_purchase',
+    amount: 95000,
+    date: new Date().toISOString().split('T')[0],
+    paymentMethod: 'cash',
+    vendor: 'Pêcheries Artisanales de Youpwé',
+    notes: 'Livraison matinale cuisine',
+    recordedBy: 'Patrick Nguemo',
+    createdAt: new Date(Date.now() - 4 * 3600000).toISOString(),
+  },
+  {
+    id: 'exp_02',
+    orgId: 'org_wouri_01',
+    title: 'Facture Électricité ENEO & Groupe Électrogène',
+    category: 'utilities',
+    amount: 45000,
+    date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
+    paymentMethod: 'mobile_money',
+    vendor: 'ENEO Cameroun',
+    recordedBy: 'Samuel Ebanda',
+    createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+  },
+];
+
+export const INITIAL_SUPPORT_TICKETS: SupportTicket[] = [
+  {
+    id: 'tkt_01',
+    orgId: 'org_wouri_01',
+    restaurantName: 'Le Wouri Gourmet',
+    requesterName: 'Samuel Ebanda',
+    requesterEmail: 'samuel@lewourigourmet.cm',
+    requesterPhone: '+237 699 45 88 12',
+    subject: 'Activation passerelle Orange Money Cameroun',
+    message: 'Nous souhaitons connecter notre code marchand Orange Money à la caisse RestaurantOS.',
+    status: 'in_progress',
+    priority: 'high',
+    adminNote: 'Dossier marchand vérifié par DATA WORK AGENCY — en attente de clé API opérateur.',
+    createdAt: new Date(Date.now() - 24 * 3600000).toISOString(),
+    updatedAt: new Date(Date.now() - 12 * 3600000).toISOString(),
+  },
+];
+
+export const INITIAL_PLATFORM_SETTINGS: PlatformSettings = {
+  defaultTrialDays: 7,
+  allowNewRegistrations: true,
+  maintenanceMode: false,
+  supportPhone: '+237 690 37 04 54',
+  supportEmail: 'dataworkagency0@gmail.com',
+  supportInstagram: 'Data Work Agency',
+  merchantInstructions:
+    'Règlement Orange Money / MTN MoMo / Virement vers DATA WORK AGENCY (+237 690 37 04 54). Activation immédiate après confirmation opérateur.',
+};
+
 export interface DatabaseState {
   organizations: Organization[];
   activeOrgId: string | null;
@@ -902,6 +1195,7 @@ export interface DatabaseState {
   activeLocationId: string;
   isAuthenticated: boolean;
   currentUser: UserProfile;
+  users: UserProfile[];
   categories: Category[];
   products: Product[];
   tables: Table[];
@@ -914,16 +1208,23 @@ export interface DatabaseState {
   subscriptionPlans: SubscriptionPlan[];
   billingTransactions: BillingTransaction[];
   staffInvitations: StaffInvitation[];
+  reviews: CustomerReview[];
+  internalNotes: InternalStaffNote[];
+  staffShifts: StaffShift[];
+  dailyZReports: DailyZReport[];
+  expenses: ExpenseRecord[];
+  supportTickets: SupportTicket[];
+  platformSettings: PlatformSettings;
 }
 
-export const STORAGE_KEY = 'restaurantos_tenant_state_v3';
+export const STORAGE_KEY = 'restaurantos_tenant_state_v4';
 
 export function loadDatabaseState(): DatabaseState {
   try {
     const raw =
       localStorage.getItem(STORAGE_KEY) ||
-      localStorage.getItem('restaurantos_tenant_state_v2') ||
-      localStorage.getItem('restaurantos_tenant_state_v1');
+      localStorage.getItem('restaurantos_tenant_state_v3') ||
+      localStorage.getItem('restaurantos_tenant_state_v2');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && (parsed.organization || parsed.organizations)) {
@@ -943,6 +1244,7 @@ export function loadDatabaseState(): DatabaseState {
           activeLocationId: parsed.activeLocationId || INITIAL_LOCATIONS[0].id,
           isAuthenticated: Boolean(parsed.isAuthenticated),
           currentUser: parsed.currentUser || INITIAL_PROFILES[0],
+          users: parsed.users || INITIAL_PROFILES,
           categories: parsed.categories || INITIAL_CATEGORIES,
           products: parsed.products || INITIAL_PRODUCTS,
           tables: parsed.tables || INITIAL_TABLES,
@@ -955,6 +1257,13 @@ export function loadDatabaseState(): DatabaseState {
           subscriptionPlans: parsed.subscriptionPlans || INITIAL_SUBSCRIPTION_PLANS,
           billingTransactions: parsed.billingTransactions || INITIAL_BILLING_TRANSACTIONS,
           staffInvitations: parsed.staffInvitations || INITIAL_STAFF_INVITATIONS,
+          reviews: parsed.reviews || INITIAL_REVIEWS,
+          internalNotes: parsed.internalNotes || INITIAL_INTERNAL_NOTES,
+          staffShifts: parsed.staffShifts || INITIAL_STAFF_SHIFTS,
+          dailyZReports: parsed.dailyZReports || INITIAL_DAILY_Z_REPORTS,
+          expenses: parsed.expenses || INITIAL_EXPENSES,
+          supportTickets: parsed.supportTickets || INITIAL_SUPPORT_TICKETS,
+          platformSettings: parsed.platformSettings || INITIAL_PLATFORM_SETTINGS,
         };
       }
     }
@@ -970,6 +1279,7 @@ export function loadDatabaseState(): DatabaseState {
     activeLocationId: 'loc_bonapriso',
     isAuthenticated: false, // Default unauthenticated for visitors opening "/"
     currentUser: INITIAL_PROFILES[0],
+    users: INITIAL_PROFILES,
     categories: INITIAL_CATEGORIES,
     products: INITIAL_PRODUCTS,
     tables: INITIAL_TABLES,
@@ -982,6 +1292,13 @@ export function loadDatabaseState(): DatabaseState {
     subscriptionPlans: INITIAL_SUBSCRIPTION_PLANS,
     billingTransactions: INITIAL_BILLING_TRANSACTIONS,
     staffInvitations: INITIAL_STAFF_INVITATIONS,
+    reviews: INITIAL_REVIEWS,
+    internalNotes: INITIAL_INTERNAL_NOTES,
+    staffShifts: INITIAL_STAFF_SHIFTS,
+    dailyZReports: INITIAL_DAILY_Z_REPORTS,
+    expenses: INITIAL_EXPENSES,
+    supportTickets: INITIAL_SUPPORT_TICKETS,
+    platformSettings: INITIAL_PLATFORM_SETTINGS,
   };
 }
 
@@ -992,3 +1309,4 @@ export function saveDatabaseState(state: DatabaseState): void {
     console.error('Could not save database state:', e);
   }
 }
+

@@ -27,6 +27,25 @@ export interface SubscriptionPlan {
   popular?: boolean;
 }
 
+export type ThemeMode = 'light' | 'dark' | 'auto';
+
+export interface SocialLinks {
+  whatsapp?: string;
+  phone?: string;
+  facebook?: string;
+  instagram?: string;
+  tiktok?: string;
+  googleMaps?: string;
+  website?: string;
+}
+
+export interface OpeningHourDay {
+  day: string;
+  open: string;
+  close: string;
+  isClosed: boolean;
+}
+
 export interface Organization {
   id: string;
   name: string;
@@ -48,11 +67,16 @@ export interface Organization {
   paymentStatus?: 'pending' | 'paid' | 'failed' | 'unpaid';
   billingPeriod?: 'monthly' | 'quarterly' | 'annual';
   openingHours?: string;
+  businessHoursSchedule?: OpeningHourDay[];
   description?: string;
   coverImage?: string;
+  gallery?: string[];
+  socialLinks?: SocialLinks;
   taxRate: number; // e.g. 19.25% in Cameroon (TVA) or 0%
   enableOnlineOrdering: boolean;
   enableTableOrdering: boolean;
+  enableReservations?: boolean;
+  isPublicPublished?: boolean;
   createdAt: string;
   status?: 'active' | 'archived' | 'inactive';
   timezone?: string;
@@ -224,6 +248,9 @@ export interface Order {
   paymentProvider?: 'cash' | 'visa_mastercard' | 'orange_money' | 'mtn_momo';
   customerName?: string;
   customerPhone?: string;
+  deliveryAddress?: string;
+  source?: 'pos' | 'public_web' | 'qr_table';
+  clientTrackingToken?: string;
   items: OrderItem[];
   subtotal: number;
   taxAmount: number;
@@ -239,6 +266,7 @@ export interface Order {
 
 export interface Reservation {
   id: string;
+  reservationCode?: string;
   orgId: string;
   locationId: string;
   customerName: string;
@@ -322,3 +350,158 @@ export interface AuditLog {
   details: string;
   createdAt: string;
 }
+
+export interface CustomerReview {
+  id: string;
+  orgId: string;
+  orderId?: string;
+  orderNumber?: string;
+  isVerifiedOrder: boolean;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  rating: number; // 1 to 5
+  comment: string;
+  status: 'published' | 'hidden' | 'flagged';
+  createdAt: string;
+  reply?: {
+    text: string;
+    authorName: string;
+    repliedAt: string;
+  };
+}
+
+export interface InternalStaffNote {
+  id: string;
+  orgId: string;
+  authorName: string;
+  authorRole: UserRole;
+  title: string;
+  content: string;
+  urgency: 'low' | 'medium' | 'high';
+  createdAt: string;
+  pinned?: boolean;
+}
+
+export interface StaffShift {
+  id: string;
+  orgId: string;
+  userId: string;
+  userName: string;
+  userRole: UserRole;
+  clockIn: string; // ISO datetime
+  clockOut?: string; // ISO datetime
+  date: string; // YYYY-MM-DD
+  totalMinutes?: number;
+  status: 'active' | 'completed';
+  notes?: string;
+}
+
+export interface DailyZReport {
+  id: string;
+  orgId: string;
+  reportDate: string; // YYYY-MM-DD
+  openingTime: string;
+  closingTime: string;
+  closedBy: string;
+  grossRevenue: number;
+  discountsTotal: number;
+  refundsTotal: number;
+  netRevenue: number;
+  taxTotal: number;
+  totalOrders: number;
+  completedOrders: number;
+  cancelledOrders: number;
+  averageOrderValue: number;
+  paymentBreakdown: {
+    cash: number;
+    card: number;
+    mobile_money: number;
+  };
+  categoryBreakdown: {
+    categoryId: string;
+    categoryName: string;
+    revenue: number;
+    quantity: number;
+  }[];
+  hourlyHeatmap: {
+    hour: number; // 0-23
+    orderCount: number;
+    revenue: number;
+  }[];
+  topDishesByQuantity: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    revenue: number;
+  }[];
+  topDishesByRevenue: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    revenue: number;
+  }[];
+  staffAttendance: {
+    staffName: string;
+    role: string;
+    clockIn: string;
+    clockOut?: string;
+    durationHours: number;
+  }[];
+  cashDrawerStarting: number;
+  cashDrawerActual: number;
+  cashDiscrepancy: number; // actual - (starting + cash sales)
+  notes?: string;
+  createdAt: string;
+}
+
+export type ExpenseCategory =
+  | 'inventory_purchase'
+  | 'rent'
+  | 'utilities'
+  | 'payroll'
+  | 'marketing'
+  | 'equipment'
+  | 'other';
+
+export interface ExpenseRecord {
+  id: string;
+  orgId: string;
+  title: string;
+  category: ExpenseCategory;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  paymentMethod: PaymentMethod | 'bank_transfer';
+  vendor?: string;
+  notes?: string;
+  recordedBy: string;
+  createdAt: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  orgId?: string;
+  restaurantName: string;
+  requesterName: string;
+  requesterEmail: string;
+  requesterPhone?: string;
+  subject: string;
+  message: string;
+  status: 'open' | 'in_progress' | 'resolved';
+  priority: 'normal' | 'high';
+  adminNote?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlatformSettings {
+  defaultTrialDays: number;
+  allowNewRegistrations: boolean;
+  maintenanceMode: boolean;
+  supportPhone: string;
+  supportEmail: string;
+  supportInstagram: string;
+  merchantInstructions: string;
+}
+
+

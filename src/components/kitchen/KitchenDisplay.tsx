@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export const KitchenDisplay: React.FC = () => {
-  const { state, language, updateOrderStatus } = useRestaurant();
+  const { scopedOrders, activeOrganization, language, updateOrderStatus } = useRestaurant();
   const t = useTranslation(language);
 
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -30,12 +30,12 @@ export const KitchenDisplay: React.FC = () => {
   }, []);
 
   // Filter kitchen-relevant orders (exclude cancelled or draft)
-  const kitchenOrders = state.orders
+  const kitchenOrders = scopedOrders
     .filter((o) => o.status !== 'cancelled' && o.status !== 'draft')
     .filter((o) => {
-      if (activeTab === 'preparing') return o.status === 'confirmed' || o.status === 'preparing';
+      if (activeTab === 'preparing') return o.status === 'pending' || o.status === 'confirmed' || o.status === 'preparing';
       if (activeTab === 'ready') return o.status === 'ready';
-      return o.status === 'confirmed' || o.status === 'preparing' || o.status === 'ready';
+      return o.status === 'pending' || o.status === 'confirmed' || o.status === 'preparing' || o.status === 'ready';
     });
 
   const getElapsedMinutes = (createdAt: string) => {
@@ -63,7 +63,9 @@ export const KitchenDisplay: React.FC = () => {
 
   const handleAdvanceStatus = (orderId: string, currentStatus: OrderStatus) => {
     playBeep();
-    if (currentStatus === 'confirmed') {
+    if (currentStatus === 'pending') {
+      updateOrderStatus(orderId, 'preparing');
+    } else if (currentStatus === 'confirmed') {
       updateOrderStatus(orderId, 'preparing');
     } else if (currentStatus === 'preparing') {
       updateOrderStatus(orderId, 'ready');
@@ -73,32 +75,32 @@ export const KitchenDisplay: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-slate-900 text-slate-100">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-900 text-slate-100">
       {/* Top Header Bar */}
-      <div className="h-16 px-6 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+      <div className="min-h-16 py-3 px-4 sm:px-6 bg-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
             <ChefHat className="w-5 h-5" />
           </div>
-          <div>
-            <h1 className="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+          <div className="min-w-0">
+            <h1 className="text-sm font-bold tracking-tight text-white flex items-center gap-2 flex-wrap">
               <span>{t.kitchen.title}</span>
-              <span className="font-mono text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <span className="font-mono tabular-nums text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
                 {kitchenOrders.length} {language === 'fr' ? 'en cours' : 'active'}
               </span>
             </h1>
-            <div className="text-[11px] text-slate-400">
-              {state.organization.name} · {t.kitchen.subtitle}
+            <div className="text-[11px] text-slate-400 truncate">
+              {activeOrganization.name} · {t.kitchen.subtitle}
             </div>
           </div>
         </div>
 
         {/* Tab Filters & Sound Toggle */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center p-1 bg-slate-800 rounded-lg text-xs font-medium">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center p-1 bg-slate-800 rounded-lg text-xs font-medium overflow-x-auto">
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-3 py-1.5 rounded-md transition-colors ${
+              className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 activeTab === 'all' ? 'bg-slate-700 text-white font-semibold' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -106,7 +108,7 @@ export const KitchenDisplay: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('preparing')}
-              className={`px-3 py-1.5 rounded-md transition-colors ${
+              className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 activeTab === 'preparing' ? 'bg-slate-700 text-white font-semibold' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -114,7 +116,7 @@ export const KitchenDisplay: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('ready')}
-              className={`px-3 py-1.5 rounded-md transition-colors ${
+              className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 activeTab === 'ready' ? 'bg-slate-700 text-white font-semibold' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -124,7 +126,7 @@ export const KitchenDisplay: React.FC = () => {
 
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`p-2 rounded-lg border text-xs flex items-center gap-1.5 transition-colors ${
+            className={`p-2 rounded-lg border text-xs flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               soundEnabled
                 ? 'border-slate-700 text-amber-400 bg-slate-800'
                 : 'border-slate-800 text-slate-500'
@@ -138,7 +140,7 @@ export const KitchenDisplay: React.FC = () => {
       </div>
 
       {/* Main Order Cards Grid */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
           {kitchenOrders.map((order) => {
             const elapsed = getElapsedMinutes(order.createdAt);
@@ -170,11 +172,11 @@ export const KitchenDisplay: React.FC = () => {
                 <div className={`p-3.5 ${headerBg} flex items-center justify-between border-b border-slate-800`}>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-sm text-white">
+                      <span className="font-mono tabular-nums font-bold text-sm text-white">
                         {order.orderNumber}
                       </span>
                       {isUrgent && (
-                        <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded animate-pulse">
+                        <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
                           RETARD
                         </span>
                       )}
@@ -185,11 +187,11 @@ export const KitchenDisplay: React.FC = () => {
                   </div>
 
                   <div className="text-right">
-                    <div className="flex items-center gap-1 font-mono font-bold text-xs text-slate-100">
+                    <div className="flex items-center justify-end gap-1 font-mono tabular-nums font-bold text-xs text-slate-100">
                       <Clock className="w-3.5 h-3.5" />
                       <span>{elapsed} min</span>
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">
+                    <div className="text-[10px] text-slate-400 font-mono tabular-nums mt-0.5">
                       {formatTime(order.createdAt)}
                     </div>
                   </div>
@@ -238,6 +240,16 @@ export const KitchenDisplay: React.FC = () => {
 
                 {/* Order Footer & Transition Button */}
                 <div className="p-3 bg-slate-900 border-t border-slate-800">
+                  {order.status === 'pending' && (
+                    <button
+                      onClick={() => handleAdvanceStatus(order.id, 'pending')}
+                      className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-lg flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Flame className="w-4 h-4" />
+                      <span>{language === 'fr' ? 'Accepter & Préparer' : 'Accept & Prepare'}</span>
+                    </button>
+                  )}
+
                   {order.status === 'confirmed' && (
                     <button
                       onClick={() => handleAdvanceStatus(order.id, 'confirmed')}
